@@ -22,6 +22,15 @@ import Compliance from '@/pages/Compliance';
 import Activity from '@/pages/Activity';
 import Integrations from '@/pages/Integrations';
 import ImportWizard from '@/pages/ImportWizard';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import OAuthConsent from '@/pages/OAuthConsent';
+
+// Auth pages live outside the protected group; never bounce to login from them.
+const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/oauth-consent'];
+const onAuthPage = () => AUTH_PATHS.some((p) => window.location.pathname.startsWith(p));
 
 // Visiting the published app without a session used to dead-end on a blank
 // page: authChecked + !isAuthenticated + no authError fell through to
@@ -50,7 +59,7 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
+    } else if (authError.type === 'auth_required' && !onAuthPage()) {
       navigateToLogin();
       return null;
     }
@@ -58,6 +67,11 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/oauth-consent" element={<OAuthConsent />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<RedirectToLogin />} />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Overview />} />
