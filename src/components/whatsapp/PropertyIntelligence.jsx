@@ -1,9 +1,11 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle, ShieldCheck, Wrench, FileWarning, User,
   Building2,
 } from "lucide-react";
 import { useKieData } from "@/lib/useKieData";
+import { TenantAvatar } from "@/components/shared/TenantChip";
 import { formatGBP, formatDate, daysUntil, urgencyColor, statusColor, matchContractors } from "@/lib/kieUtils";
 
 export default function PropertyIntelligence({ property, tenant, triageIssueType, onAssignContractor }) {
@@ -83,15 +85,13 @@ export default function PropertyIntelligence({ property, tenant, triageIssueType
       {tenant && (
         <div className="px-4 py-3 border-b border-slate-100">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Tenant</p>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-              <User className="w-4 h-4 text-slate-500" />
-            </div>
+          <Link to={`/tenants/${tenant.id}`} className="flex items-center gap-2.5 group">
+            <TenantAvatar tenant={tenant} size="md" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800">{tenant.name}</p>
+              <p className="text-sm font-medium text-slate-800 group-hover:underline decoration-[hsl(var(--sage))] underline-offset-2">{tenant.name}</p>
               <p className="text-xs text-slate-500">{tenant.phone}</p>
             </div>
-          </div>
+          </Link>
           <div className="flex items-center gap-2 mt-2">
             <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor(tenant.payment_status)}`}>{tenant.payment_status}</span>
             <span className="text-xs text-slate-500">{formatGBP(tenant.rent_amount)}/mo</span>
