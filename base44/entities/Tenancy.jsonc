@@ -1,0 +1,63 @@
+{
+  "name": "Tenancy",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "property_id": {
+      "type": "string"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "rent_amount": {
+      "type": "number"
+    },
+    "deposit_amount": {
+      "type": "number"
+    },
+    "deposit_scheme": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Ended",
+        "Upcoming"
+      ],
+      "default": "Active"
+    },
+    "rent_history": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "[{date: 'YYYY-MM-DD', amount: number}] \u2014 appended when rent changes"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "property_id"
+  ]
+}
