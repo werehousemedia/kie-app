@@ -10,52 +10,55 @@ const DEMO_FILTERED = [
   "transactions", "activity", "tenancies",
 ];
 
+const EMPTY = {
+  properties: [], units: [], tenants: [], equipment: [], conversations: [],
+  messages: [], triages: [], tickets: [], contractors: [], compliance: [],
+  bills: [], transactions: [], activity: [], integrationLogs: [], tenancies: [],
+};
+
+// Every query degrades independently: one failing entity must never blank
+// the whole app. Failures fall back to [] and are reported via `error`.
+const SOURCES = {
+  properties: () => base44.entities.Property.list(),
+  units: () => base44.entities.Unit.list(),
+  tenants: () => base44.entities.Tenant.list(),
+  equipment: () => base44.entities.Equipment.list(),
+  conversations: () => base44.entities.Conversation.list(),
+  messages: () => base44.entities.Message.list(),
+  triages: () => base44.entities.AITriage.list(),
+  tickets: () => base44.entities.MaintenanceTicket.list(),
+  contractors: () => base44.entities.Contractor.list(),
+  compliance: () => base44.entities.ComplianceRecord.list(),
+  bills: () => base44.entities.Bill.list(),
+  transactions: () => base44.entities.Transaction.list(),
+  activity: () => base44.entities.ActivityEvent.list("-timestamp", 200),
+  integrationLogs: () => base44.entities.IntegrationLog.list("-timestamp", 100),
+  tenancies: () => base44.entities.Tenancy.list(),
+};
+
 export function useKieData() {
   const { hideDemo } = useDemoFilter();
-  const [raw, setRaw] = useState({
-    properties: [], units: [], tenants: [], equipment: [], conversations: [],
-    messages: [], triages: [], tickets: [], contractors: [], compliance: [],
-    bills: [], transactions: [], activity: [], integrationLogs: [], tenancies: [],
-  });
+  const [raw, setRaw] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
-    try {
-      const [
-        properties, units, tenants, equipment, conversations, messages,
-        triages, tickets, contractors, compliance, bills, transactions, activity, integrationLogs,
-        tenancies
-      ] = await Promise.all([
-        base44.entities.Property.list(),
-        base44.entities.Unit.list(),
-        base44.entities.Tenant.list(),
-        base44.entities.Equipment.list(),
-        base44.entities.Conversation.list(),
-        base44.entities.Message.list(),
-        base44.entities.AITriage.list(),
-        base44.entities.MaintenanceTicket.list(),
-        base44.entities.Contractor.list(),
-        base44.entities.ComplianceRecord.list(),
-        base44.entities.Bill.list(),
-        base44.entities.Transaction.list(),
-        base44.entities.ActivityEvent.list("-timestamp", 200),
-        base44.entities.IntegrationLog.list("-timestamp", 100),
-        base44.entities.Tenancy.list(),
-      ]);
-      setRaw({
-        properties: properties || [], units: units || [], tenants: tenants || [],
-        equipment: equipment || [], conversations: conversations || [], messages: messages || [],
-        triages: triages || [], tickets: tickets || [], contractors: contractors || [],
-        compliance: compliance || [], bills: bills || [], transactions: transactions || [],
-        activity: activity || [], integrationLogs: integrationLogs || [], tenancies: tenancies || [],
-      });
-    } catch (e) {
-      setError(e.message || "Failed to load data");
-    } finally {
-      setLoading(false);
-    }
+    const keys = Object.keys(SOURCES);
+    const settled = await Promise.allSettled(keys.map((k) => SOURCES[k]()));
+    const next = { ...EMPTY };
+    const failed = [];
+    settled.forEach((res, i) => {
+      if (res.status === "fulfilled") {
+        next[keys[i]] = res.value || [];
+      } else {
+        failed.push(keys[i]);
+        console.warn(`useKieData: ${keys[i]} failed to load`, res.reason);
+      }
+    });
+    setRaw(next);
+    setError(failed.length > 0 ? `Some data failed to load: ${failed.join(", ")}` : null);
+    setLoading(false);
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
