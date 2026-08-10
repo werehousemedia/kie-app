@@ -46,3 +46,5 @@ export default async function(req: Request): Promise<Response> {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
+
+// redeploy: sheetFetch range fix e3d52c2
