@@ -11,7 +11,9 @@ import AppLayout from '@/components/layout/AppLayout';
 import Overview from '@/pages/Overview';
 import WhatsAppAssistant from '@/pages/WhatsAppAssistant';
 import Properties from '@/pages/Properties';
+import PropertyDetail from '@/pages/PropertyDetail';
 import Tenants from '@/pages/Tenants';
+import TenantProfile from '@/pages/TenantProfile';
 import Finance from '@/pages/Finance';
 import Maintenance from '@/pages/Maintenance';
 import Contractors from '@/pages/Contractors';
@@ -47,7 +49,9 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Overview />} />
           <Route path="/whatsapp" element={<WhatsAppAssistant />} />
           <Route path="/properties" element={<Properties />} />
+          <Route path="/properties/:id" element={<PropertyDetail />} />
           <Route path="/tenants" element={<Tenants />} />
+          <Route path="/tenants/:id" element={<TenantProfile />} />
           <Route path="/finance" element={<Finance />} />
           <Route path="/maintenance" element={<Maintenance />} />
           <Route path="/contractors" element={<Contractors />} />
