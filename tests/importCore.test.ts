@@ -189,15 +189,12 @@ assert.equal(boiler.warranty_expiry, "2031-06-14");
 assert.equal(boiler.location, "Kitchen cupboard");
 
 // 11. payment_status only defaulted on create, preserved on update
-const { results: r2, store: store2 } = await (async () => {
-  const { db, store } = makeDb(JSON.parse(JSON.stringify(existingSeed)));
-  await runImport(db, tabs, { tabMappings }, { preview: false });
-  // simulate user marking Eliza paid in-app, then re-sync
-  const el = store.Tenant.find((t: any) => t.name === "Eliza Pemberton");
-  el.payment_status = "Paid";
-  const results = await runImport(db, tabs, { tabMappings }, { preview: false });
-  return { results: r, store2: store, results2: results, store };
-})().then((x: any) => ({ results: x.results2, store2: x.store }));
+const rerun = makeDb(JSON.parse(JSON.stringify(existingSeed)));
+await runImport(rerun.db, tabs, { tabMappings }, { preview: false });
+// simulate user marking Eliza paid in-app, then re-sync
+rerun.store.Tenant.find((t: any) => t.name === "Eliza Pemberton").payment_status = "Paid";
+const r2 = await runImport(rerun.db, tabs, { tabMappings }, { preview: false });
+const store2 = rerun.store;
 const elizaAfter = store2.Tenant.find((t: any) => t.name === "Eliza Pemberton");
 assert.equal(elizaAfter.payment_status, "Paid", "re-import must not clobber payment_status");
 assert.equal(r2.created.Tenant, 0, "re-import creates no tenants (idempotent)");
