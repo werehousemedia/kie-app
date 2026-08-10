@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
+import PropertyLink from "@/components/shared/PropertyLink";
 import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, urgencyColor, statusColor, matchContractors, logActivity } from "@/lib/kieUtils";
 import { Search, Plus, X, ChevronRight, CheckCircle2, User } from "lucide-react";
@@ -69,7 +70,7 @@ export default function Maintenance() {
                 <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
               </div>
               <p className="text-sm font-medium text-slate-900 mb-1 line-clamp-2">{t.description}</p>
-              <p className="text-xs text-slate-500">{prop?.name} · {tenant?.name}</p>
+              <p className="text-xs text-slate-500"><PropertyLink property={prop} />{tenant && <> · <Link to={`/tenants/${tenant.id}`} onClick={(e) => e.stopPropagation()} className="hover:underline decoration-[hsl(var(--sage))] underline-offset-2">{tenant.name}</Link></>}</p>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
                 <div className="flex items-center gap-3 text-xs text-slate-500">
                   {contractor && <span className="flex items-center gap-1"><User className="w-3 h-3" />{contractor.name}</span>}
@@ -135,7 +136,7 @@ function TicketDetail({ ticket, onClose, data }) {
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100"><X className="w-5 h-5 text-slate-500" /></button>
         </div>
         <div className="p-6 space-y-5">
-          <div><h2 className="text-lg font-bold text-slate-900 mb-1">{ticket.description}</h2><p className="text-sm text-slate-500">{prop?.name} · {tenant?.name}</p></div>
+          <div><h2 className="text-lg font-bold text-slate-900 mb-1">{ticket.description}</h2><p className="text-sm text-slate-500"><PropertyLink property={prop} />{tenant && <> · <Link to={`/tenants/${tenant.id}`} className="hover:underline decoration-[hsl(var(--sage))] underline-offset-2">{tenant.name}</Link></>}</p></div>
 
           {triage && (
             <div className="p-3 bg-[hsl(var(--sage-light))] rounded-lg">
