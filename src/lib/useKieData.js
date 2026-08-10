@@ -131,25 +131,14 @@ export function useKieData() {
   return { ...data, loading, error, refreshing: !!inflight, reload: () => load(true) };
 }
 
-// Amber strip shown by AppLayout whenever a refresh partially failed.
-// Data on screen stays usable (last good values); one click retries.
-export function DataHealthBanner() {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const listener = () => setTick((t) => t + 1);
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  }, []);
-  if (failedKeys.length === 0) return null;
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800 text-sm">
-      <span>Some data couldn't refresh just now — showing the last loaded values.</span>
-      <button
-        onClick={() => load(true)}
-        className="shrink-0 px-3 py-1 rounded-lg border border-amber-300 hover:bg-amber-100 font-medium"
-      >
-        Retry
-      </button>
-    </div>
-  );
+// Store internals for DataHealthBanner (kept JSX-free in this .js module).
+export function subscribeKieData(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+export function getKieDataFailures() {
+  return failedKeys;
+}
+export function reloadKieData() {
+  return load(true);
 }
