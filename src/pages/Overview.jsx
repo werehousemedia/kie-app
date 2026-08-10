@@ -84,7 +84,7 @@ export default function Overview() {
   const urgentConversations = conversations.filter((c) => c.urgency === "high" || c.urgency === "emergency");
 
   const needsAttention = [
-    ...overdueRent > 0 ? [{ type: "Rent overdue", detail: `${formatGBP(overdueRent)} overdue rent`, severity: "critical", to: "/finance?tab=bills&status=Overdue" }] : [],
+    ...overdueRent > 0 ? [{ type: "Rent overdue", detail: `${formatGBP(overdueRent)} overdue rent`, severity: "critical", to: "/finance?tab=rent&status=Overdue" }] : [],
     ...openTickets.filter((t) => t.urgency === "emergency" || t.urgency === "high").map((t) => ({
       type: "Urgent repair", detail: t.description?.slice(0, 60), severity: "critical", to: `/maintenance?status=open&urgency=${t.urgency}`
     })),
@@ -125,8 +125,8 @@ export default function Overview() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Total properties" value={properties.length} icon={Building2} tone="navy" to="/properties" />
         <KpiCard label="Occupied units" value={occupiedUnits} sublabel={`${tenants.length} tenants`} icon={Users} tone="white" to="/tenants" />
-        <KpiCard label="Rent due this month" value={formatGBP(rentDue)} icon={Wallet} tone="sage" to="/finance?tab=bills" />
-        <KpiCard label="Overdue rent" value={formatGBP(overdueRent)} icon={AlertTriangle} tone={overdueRent > 0 ? "rose" : "white"} to="/finance?tab=bills&status=Overdue" />
+        <KpiCard label="Rent due this month" value={formatGBP(rentDue)} icon={Wallet} tone="sage" to="/finance?tab=rent&status=Due" />
+        <KpiCard label="Overdue rent" value={formatGBP(overdueRent)} icon={AlertTriangle} tone={overdueRent > 0 ? "rose" : "white"} to="/finance?tab=rent&status=Overdue" />
         <KpiCard label="Upcoming bills (30d)" value={upcomingBills.length} sublabel={formatGBP(upcomingBills.reduce((s, b) => s + (b.amount || 0), 0))} icon={Wallet} tone="white" to="/finance?tab=bills" />
         <KpiCard label="Open maintenance" value={openTickets.length} sublabel={`${openTickets.filter(t => t.urgency === "emergency").length} emergency`} icon={Wrench} tone="white" to="/maintenance?status=open" />
         <KpiCard label="Compliance expiring (60d)" value={expiringCompliance.length} sublabel={`${expiringCompliance.filter(c => daysUntil(c.expiry_date) <= 30).length} within 30d`} icon={FileCheck} tone={expiringCompliance.length > 0 ? "amber" : "white"} to="/compliance?status=expiring" />
