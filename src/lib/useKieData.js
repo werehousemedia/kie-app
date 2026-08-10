@@ -125,8 +125,7 @@ export function useKieData() {
     const out = { ...raw };
     for (const k of DEMO_FILTERED) out[k] = (raw[k] || []).filter((x) => !x.is_demo);
     return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [raw, hideDemo, version]);
+  }, [raw, hideDemo]);
 
   return { ...data, loading, error, refreshing: !!inflight, reload: () => load(true) };
 }
