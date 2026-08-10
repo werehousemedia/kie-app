@@ -19,7 +19,10 @@
         "HMO licence",
         "Insurance",
         "Tenancy agreement",
-        "Inventory"
+        "Inventory",
+        "Legionella Risk Assessment",
+        "PAT Test",
+        "Deposit Protection Certificate"
       ]
     },
     "issue_date": {
@@ -39,6 +42,10 @@
         "Missing"
       ],
       "default": "Compliant"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Provider or engineer, e.g. SafeGas Ltd"
     },
     "file_url": {
       "type": "string"
