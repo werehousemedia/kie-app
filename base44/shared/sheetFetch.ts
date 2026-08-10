@@ -30,7 +30,9 @@ export async function fetchSheetTabs(base44: any, sheetUrl: string): Promise<She
 
   const tabs: SheetTab[] = [];
   for (const tabName of tabNames) {
-    const range = encodeURIComponent(`${tabName}!A:Z5000`);
+    // "A:Z5000" is parsed by Google as "row 5000 to end" and 400s on smaller
+    // grids — it must be the bounded "A1:Z5000" (clamped to the actual grid).
+    const range = encodeURIComponent(`${tabName}!A1:Z5000`);
     const valuesRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=FORMATTED_VALUE`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
