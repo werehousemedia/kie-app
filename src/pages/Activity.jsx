@@ -78,7 +78,7 @@ export default function Activity() {
                           <span className="text-xs text-slate-400 ml-auto">{formatDateTime(a.timestamp)}</span>
                         </div>
                         <p className="text-sm text-slate-600">{a.description}</p>
-                        {(prop || tenant) && <p className="text-xs text-slate-400 mt-0.5">{prop?.name}{prop && tenant ? " · " : ""}{tenant?.name}</p>}
+                        {(prop || tenant) && <p className="text-xs text-slate-400 mt-0.5">{prop && <PropertyLink property={prop} className="text-slate-500" />}{prop && tenant ? " · " : ""}{tenant && <Link to={`/tenants/${tenant.id}`} className="hover:underline decoration-[hsl(var(--sage))] underline-offset-2 text-slate-500">{tenant.name}</Link>}</p>}
                       </div>
                     </div>
                   );
