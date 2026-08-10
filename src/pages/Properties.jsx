@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, daysUntil, statusColor } from "@/lib/kieUtils";
@@ -18,10 +19,20 @@ import { toast } from "sonner";
 
 export default function Properties() {
   const { properties, tenants, equipment, compliance, tickets, bills, units, reload, loading } = useKieData();
+  const [searchParams] = useSearchParams();
   const [view, setView] = useState("grid");
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+
+  // Deep link: /properties?property=<id> opens that property's detail view
+  const propParam = searchParams.get("property");
+  useEffect(() => {
+    if (propParam && properties.length > 0) {
+      const p = properties.find((x) => x.id === propParam);
+      if (p) setSelected(p);
+    }
+  }, [propParam, properties]);
 
   const filtered = properties.filter((p) =>
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
