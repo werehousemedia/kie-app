@@ -1,0 +1,52 @@
+{
+  "name": "ActivityEvent",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "WhatsApp message",
+        "AI triage",
+        "Maintenance created",
+        "Maintenance status",
+        "Contractor assigned",
+        "Compliance reminder",
+        "Bill update",
+        "Rent reminder",
+        "Document upload",
+        "Integration sync",
+        "Tenant update",
+        "Property update"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "related_id": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ],
+      "default": "info"
+    }
+  },
+  "required": [
+    "event_type",
+    "description"
+  ]
+}

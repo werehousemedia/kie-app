@@ -1,0 +1,55 @@
+{
+  "name": "Transaction",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Rent received",
+        "Bill paid",
+        "Contractor payment",
+        "Expense",
+        "Subscription",
+        "Refund",
+        "Other"
+      ]
+    },
+    "amount": {
+      "type": "number"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "category": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Completed",
+        "Pending",
+        "Failed"
+      ],
+      "default": "Completed"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "simulated": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "type",
+    "amount",
+    "date"
+  ]
+}

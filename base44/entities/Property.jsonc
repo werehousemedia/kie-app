@@ -1,0 +1,65 @@
+{
+  "name": "Property",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "postcode": {
+      "type": "string"
+    },
+    "property_type": {
+      "type": "string",
+      "enum": [
+        "House",
+        "Flat",
+        "HMO",
+        "Bungalow",
+        "Studio"
+      ]
+    },
+    "hmo_status": {
+      "type": "string",
+      "enum": [
+        "Not HMO",
+        "Licensed HMO",
+        "HMO (unlicensed)"
+      ]
+    },
+    "units_count": {
+      "type": "number"
+    },
+    "occupancy_status": {
+      "type": "string",
+      "enum": [
+        "Fully occupied",
+        "Partially occupied",
+        "Vacant",
+        "Void"
+      ]
+    },
+    "photo_url": {
+      "type": "string"
+    },
+    "purchase_value": {
+      "type": "number"
+    },
+    "monthly_rent_expected": {
+      "type": "number"
+    },
+    "council_tax_band": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "address",
+    "postcode"
+  ]
+}

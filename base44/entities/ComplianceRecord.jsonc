@@ -1,0 +1,54 @@
+{
+  "name": "ComplianceRecord",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Gas Safety Certificate",
+        "EPC",
+        "EICR",
+        "Boiler service",
+        "Smoke/CO alarm",
+        "HMO licence",
+        "Insurance",
+        "Tenancy agreement",
+        "Inventory"
+      ]
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Compliant",
+        "Expiring soon",
+        "Overdue",
+        "Missing"
+      ],
+      "default": "Compliant"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "property_id",
+    "category"
+  ]
+}

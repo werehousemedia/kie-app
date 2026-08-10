@@ -1,0 +1,40 @@
+{
+  "name": "IntegrationLog",
+  "type": "object",
+  "properties": {
+    "service": {
+      "type": "string",
+      "enum": [
+        "Google Sheets",
+        "Google Drive",
+        "WhatsApp",
+        "KIE Lettings",
+        "KIE Sales",
+        "Bank/Payment"
+      ]
+    },
+    "event": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failed",
+        "pending"
+      ],
+      "default": "success"
+    },
+    "details": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "service",
+    "event"
+  ]
+}

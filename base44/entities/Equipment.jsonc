@@ -1,0 +1,52 @@
+{
+  "name": "Equipment",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Boiler",
+        "Heating",
+        "Electrical",
+        "Appliance",
+        "Plumbing",
+        "Security",
+        "Other"
+      ]
+    },
+    "make": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "install_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "last_service_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "next_service_due": {
+      "type": "string",
+      "format": "date"
+    },
+    "warranty_info": {
+      "type": "string"
+    },
+    "service_history": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "property_id",
+    "type"
+  ]
+}

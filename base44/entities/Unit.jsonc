@@ -1,0 +1,30 @@
+{
+  "name": "Unit",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string"
+    },
+    "unit_label": {
+      "type": "string"
+    },
+    "occupancy_status": {
+      "type": "string",
+      "enum": [
+        "Occupied",
+        "Vacant",
+        "Void"
+      ]
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "rent_amount": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "property_id",
+    "unit_label"
+  ]
+}

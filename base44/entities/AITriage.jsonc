@@ -1,0 +1,59 @@
+{
+  "name": "AITriage",
+  "type": "object",
+  "properties": {
+    "message_id": {
+      "type": "string"
+    },
+    "conversation_id": {
+      "type": "string"
+    },
+    "property_id": {
+      "type": "string"
+    },
+    "issue_type": {
+      "type": "string",
+      "enum": [
+        "plumbing",
+        "heating",
+        "electricity",
+        "rent query",
+        "compliance",
+        "general",
+        "noise",
+        "security"
+      ]
+    },
+    "urgency": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "emergency"
+      ]
+    },
+    "suggested_reply": {
+      "type": "string"
+    },
+    "troubleshooting": {
+      "type": "string"
+    },
+    "equipment_context": {
+      "type": "string"
+    },
+    "recommended_action": {
+      "type": "string"
+    },
+    "maintenance_ticket_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "conversation_id"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "type": "string"
+    },
+    "sender": {
+      "type": "string",
+      "enum": [
+        "tenant",
+        "landlord",
+        "ai",
+        "system"
+      ]
+    },
+    "content": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ai_triage_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "conversation_id",
+    "sender",
+    "content"
+  ]
+}

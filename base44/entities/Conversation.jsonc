@@ -1,0 +1,54 @@
+{
+  "name": "Conversation",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "property_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Awaiting reply",
+        "Resolved",
+        "Escalated"
+      ]
+    },
+    "urgency": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "emergency"
+      ]
+    },
+    "unread_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_message": {
+      "type": "string"
+    },
+    "last_message_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "WhatsApp",
+        "SMS",
+        "Email"
+      ],
+      "default": "WhatsApp"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "property_id"
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "name": "MaintenanceTicket",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "conversation_id": {
+      "type": "string"
+    },
+    "ai_triage_id": {
+      "type": "string"
+    },
+    "issue_type": {
+      "type": "string",
+      "enum": [
+        "plumbing",
+        "heating",
+        "electricity",
+        "appliance",
+        "structural",
+        "general"
+      ]
+    },
+    "urgency": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "emergency"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "New",
+        "AI triage",
+        "Awaiting landlord approval",
+        "Contractor requested",
+        "Visit booked",
+        "Work in progress",
+        "Awaiting sign-off",
+        "Complete",
+        "Cancelled"
+      ],
+      "default": "New"
+    },
+    "description": {
+      "type": "string"
+    },
+    "contractor_id": {
+      "type": "string"
+    },
+    "cost_estimate": {
+      "type": "number"
+    },
+    "cost_actual": {
+      "type": "number"
+    },
+    "appointment_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "landlord_approved": {
+      "type": "boolean",
+      "default": false
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "property_id",
+    "description"
+  ]
+}

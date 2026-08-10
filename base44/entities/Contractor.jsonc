@@ -1,0 +1,66 @@
+{
+  "name": "Contractor",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "trade": {
+      "type": "string",
+      "enum": [
+        "Plumbing",
+        "Heating/Gas",
+        "Electrical",
+        "General",
+        "Carpentry",
+        "Roofing",
+        "Pest control",
+        "Cleaning",
+        "Locksmith",
+        "Appliance repair"
+      ]
+    },
+    "services": {
+      "type": "string"
+    },
+    "coverage_area": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "availability": {
+      "type": "string",
+      "enum": [
+        "Available",
+        "Limited",
+        "Booked",
+        "On holiday"
+      ]
+    },
+    "insurance_expiry": {
+      "type": "string",
+      "format": "date"
+    },
+    "rating": {
+      "type": "number"
+    },
+    "preferred": {
+      "type": "boolean",
+      "default": false
+    },
+    "avg_quote": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "trade"
+  ]
+}

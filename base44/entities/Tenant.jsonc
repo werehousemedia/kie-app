@@ -1,0 +1,60 @@
+{
+  "name": "Tenant",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "property_id": {
+      "type": "string"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "tenancy_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "tenancy_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "rent_amount": {
+      "type": "number"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "Paid",
+        "Due",
+        "Overdue",
+        "Part-paid"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "consent_status": {
+      "type": "string",
+      "enum": [
+        "Granted",
+        "Pending",
+        "Withdrawn"
+      ]
+    },
+    "data_retention": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "phone",
+    "property_id"
+  ]
+}

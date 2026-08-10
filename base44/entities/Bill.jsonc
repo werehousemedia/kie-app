@@ -1,0 +1,59 @@
+{
+  "name": "Bill",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Rent",
+        "Council tax",
+        "Gas",
+        "Electricity",
+        "Water",
+        "Insurance",
+        "Subscription",
+        "Contractor invoice",
+        "Maintenance",
+        "Other"
+      ]
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Paid",
+        "Due",
+        "Overdue",
+        "Scheduled"
+      ],
+      "default": "Due"
+    },
+    "payment_method": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "attachment_url": {
+      "type": "string"
+    },
+    "is_income": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "category",
+    "due_date",
+    "amount"
+  ]
+}
