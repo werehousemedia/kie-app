@@ -22,6 +22,17 @@
     "is_default": {
       "type": "boolean",
       "default": false
+    },
+    "sheet_url": {
+      "type": "string"
+    },
+    "sync_secret": {
+      "type": "string",
+      "description": "Shared secret for unattended sync calls"
+    },
+    "last_synced": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
