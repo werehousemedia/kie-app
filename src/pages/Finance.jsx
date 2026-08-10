@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
@@ -14,8 +15,15 @@ import { toast } from "sonner";
 
 export default function Finance() {
   const { bills, transactions, properties, tenants, reload, loading } = useKieData();
+  const [searchParams] = useSearchParams();
   const [addOpen, setAddOpen] = useState(false);
-  const [tab, setTab] = useState("overview");
+  const VALID_TABS = ["overview", "rent", "bills", "subscriptions", "contractor", "transactions"];
+  const [tab, setTab] = useState(() => {
+    const t = searchParams.get("tab");
+    return VALID_TABS.includes(t) ? t : "overview";
+  });
+  const statusFilter = searchParams.get("status");
+  const byStatus = (list) => (statusFilter ? list.filter((b) => b.status === statusFilter) : list);
 
   if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" /></div>;
 
@@ -114,10 +122,10 @@ export default function Finance() {
         </TabsContent>
 
         <TabsContent value="rent">
-          <BillTable bills={bills.filter((b) => b.category === "Rent")} properties={properties} tenants={tenants} onMarkPaid={markPaid} onReminder={sendReminder} showReminder />
+          <BillTable bills={byStatus(bills.filter((b) => b.category === "Rent"))} properties={properties} tenants={tenants} onMarkPaid={markPaid} onReminder={sendReminder} showReminder />
         </TabsContent>
         <TabsContent value="bills">
-          <BillTable bills={bills.filter((b) => !b.is_income && ["Council tax", "Gas", "Electricity", "Water", "Insurance", "Maintenance", "Other"].includes(b.category))} properties={properties} onMarkPaid={markPaid} />
+          <BillTable bills={byStatus(bills.filter((b) => !b.is_income && ["Council tax", "Gas", "Electricity", "Water", "Internet", "Service charge", "Insurance", "Maintenance", "Other"].includes(b.category)))} properties={properties} onMarkPaid={markPaid} />
         </TabsContent>
         <TabsContent value="subscriptions">
           <BillTable bills={bills.filter((b) => b.category === "Subscription")} properties={properties} onMarkPaid={markPaid} />
