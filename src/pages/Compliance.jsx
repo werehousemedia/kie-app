@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-const categories = ["Gas Safety Certificate", "EPC", "EICR", "Boiler service", "Smoke/CO alarm", "HMO licence", "Insurance", "Tenancy agreement", "Inventory"];
+const categories = ["Gas Safety Certificate", "EPC", "EICR", "Boiler service", "Smoke/CO alarm", "HMO licence", "Insurance", "Tenancy agreement", "Inventory", "Legionella Risk Assessment", "PAT Test", "Deposit Protection Certificate"];
 
 const STATUS_PARAM_MAP = { expiring: "Expiring soon", overdue: "Overdue", missing: "Missing", compliant: "Compliant" };
 
