@@ -55,6 +55,12 @@
       "type": "string",
       "description": "e.g. DPS, TDS, mydeposits"
     },
+    "deposit_amount": {
+      "type": "number"
+    },
+    "photo_url": {
+      "type": "string"
+    },
     "is_demo": {
       "type": "boolean",
       "default": false
