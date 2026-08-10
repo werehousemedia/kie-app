@@ -31,7 +31,7 @@ export default function ChooseSource({ onParsed }) {
       const res = await base44.functions.invoke("parse_source", payload);
       const tabs = res.data?.tabs || [];
       if (tabs.length === 0) { setError("No tabs or rows found in that source."); setLoading(false); return; }
-      onParsed(tabs);
+      onParsed(tabs, mode === "sheet" ? { sheetUrl: url } : {});
     } catch (e) {
       setError(e.response?.data?.error || e.message || "Could not read the source");
     } finally {
