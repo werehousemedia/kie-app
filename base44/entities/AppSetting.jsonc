@@ -1,0 +1,16 @@
+{
+  "name": "AppSetting",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Unique setting name, e.g. comms_log_sheet_id"
+    },
+    "value": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "key"
+  ]
+}
