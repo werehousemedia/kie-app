@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { fetchSheetTabs } from "../../shared/sheetFetch.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -11,50 +12,9 @@ export default async function(req: Request): Promise<Response> {
 
     // --- Google Sheets path ---
     if (sheetUrl) {
-      const match = String(sheetUrl).match(/\/d\/([a-zA-Z0-9-_]+)/);
-      if (!match) return Response.json({ error: "That doesn't look like a Google Sheet URL. Paste the full link from your browser." }, { status: 400 });
-      const spreadsheetId = match[1];
-
-      const conn = await base44.asServiceRole.connectors.getConnection("googlesheets");
-      const accessToken = conn.accessToken;
-
-      const metaRes = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      if (metaRes.status === 403) {
-        return Response.json({ error: "Can't access this sheet. Make sure it's shared with your connected Google account (Viewer access is enough) or the link is 'Anyone with the link'." }, { status: 403 });
-      }
-      if (!metaRes.ok) {
-        const err = await metaRes.json().catch(() => ({}));
-        return Response.json({ error: err.error?.message || "Failed to read the spreadsheet." }, { status: metaRes.status });
-      }
-      const meta = await metaRes.json();
-      const tabNames = (meta.sheets || []).map((s) => s.properties.title).filter(Boolean);
-
-      const tabs = [];
-      for (const tabName of tabNames) {
-        const range = encodeURIComponent(`${tabName}!A:Z5000`);
-        const valuesRes = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        if (!valuesRes.ok) continue;
-        const valuesData = await valuesRes.json();
-        const rows = valuesData.values || [];
-        if (rows.length === 0) { tabs.push({ name: tabName, headers: [], rows: [], empty: true }); continue; }
-        const headers = rows[0].map((h: any) => String(h || "").trim()).filter((h: string, i: number, arr: string[]) => arr.indexOf(h) === i || h === "");
-        const headerIdx = rows[0].map((h: any, i: number) => ({ h: String(h || "").trim(), i }));
-        const dataRows = rows.slice(1).map((r: any[], idx: number) => {
-          const obj: any = { _rowNumber: idx + 2 };
-          for (const { h, i } of headerIdx) {
-            if (h) obj[h] = r[i] !== undefined ? String(r[i]) : "";
-          }
-          return obj;
-        }).filter((r: any) => Object.keys(r).some((k) => k !== "_rowNumber" && r[k] !== ""));
-        tabs.push({ name: tabName, headers: headers.filter(Boolean), rows: dataRows, empty: dataRows.length === 0 });
-      }
-      return Response.json({ tabs });
+      const result = await fetchSheetTabs(base44, sheetUrl);
+      if (result.error) return Response.json({ error: result.error.message }, { status: result.error.status });
+      return Response.json({ tabs: result.tabs });
     }
 
     // --- Uploaded file path ---
