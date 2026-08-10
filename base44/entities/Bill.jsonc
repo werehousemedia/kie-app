@@ -49,6 +49,14 @@
     "is_income": {
       "type": "boolean",
       "default": false
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
     }
   },
   "required": [

@@ -21,6 +21,14 @@
     },
     "rent_amount": {
       "type": "number"
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
     }
   },
   "required": [

@@ -1,0 +1,31 @@
+{
+  "name": "ImportTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "sheet_url",
+        "file"
+      ],
+      "default": "sheet_url"
+    },
+    "tab_mappings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name",
+    "tab_mappings"
+  ]
+}

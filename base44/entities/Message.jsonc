@@ -23,6 +23,14 @@
     },
     "ai_triage_id": {
       "type": "string"
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
     }
   },
   "required": [

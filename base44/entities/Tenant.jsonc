@@ -50,6 +50,14 @@
     },
     "data_retention": {
       "type": "string"
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
     }
   },
   "required": [

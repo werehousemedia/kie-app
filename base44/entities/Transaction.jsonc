@@ -45,6 +45,14 @@
     "simulated": {
       "type": "boolean",
       "default": true
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
     }
   },
   "required": [
