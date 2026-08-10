@@ -14,6 +14,7 @@
         "Appliance",
         "Plumbing",
         "Security",
+        "Furniture",
         "Other"
       ]
     },
@@ -22,6 +23,17 @@
     },
     "model": {
       "type": "string"
+    },
+    "fuel_type": {
+      "type": "string",
+      "enum": [
+        "Gas",
+        "Electric",
+        "Oil",
+        "LPG",
+        "Heat pump",
+        "Other"
+      ]
     },
     "install_date": {
       "type": "string",
@@ -37,6 +49,14 @@
     },
     "warranty_info": {
       "type": "string"
+    },
+    "warranty_expiry": {
+      "type": "string",
+      "format": "date"
+    },
+    "location": {
+      "type": "string",
+      "description": "Where in the property, e.g. Kitchen cupboard"
     },
     "service_history": {
       "type": "string"
