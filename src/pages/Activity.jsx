@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
+import PropertyLink from "@/components/shared/PropertyLink";
 import { formatDateTime } from "@/lib/kieUtils";
 import { Search, Activity as ActivityIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
