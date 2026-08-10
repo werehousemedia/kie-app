@@ -1,0 +1,14 @@
+{
+  "name": "nightly_sync",
+  "entry": "entry.ts",
+  "automations": [
+    {
+      "type": "scheduled",
+      "name": "nightly_sheet_sync",
+      "description": "Pull the latest property data from the saved Google Sheet every night",
+      "schedule_mode": "recurring",
+      "schedule_type": "cron",
+      "cron_expression": "0 3 * * *"
+    }
+  ]
+}
