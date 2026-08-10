@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { useSearchParams, useNavigate, Navigate } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
-import { formatGBP, formatDate, daysUntil, statusColor } from "@/lib/kieUtils";
+import { formatGBP, daysUntil, statusColor } from "@/lib/kieUtils";
 import { logActivity } from "@/lib/kieUtils";
 import {
-  Building2, Search, LayoutGrid, List, Plus, X, MapPin, Users, Wrench, FileCheck, Sheet,
+  Building2, Search, LayoutGrid, List, Plus, MapPin, Users, Wrench, FileCheck, Sheet,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {

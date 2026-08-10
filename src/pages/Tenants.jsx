@@ -68,44 +68,6 @@ export default function Tenants() {
   );
 }
 
-function TenantDetail({ tenant, onClose, data }) {
-  const { properties, conversations, tickets } = data;
-  const prop = properties.find((p) => p.id === tenant.property_id);
-  const conv = conversations.find((c) => c.tenant_id === tenant.id);
-  const tenantTickets = tickets.filter((t) => t.tenant_id === tenant.id);
-  return (
-    <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div><h2 className="text-lg font-bold text-slate-900">{tenant.name}</h2><p className="text-sm text-slate-500">{prop?.name}</p></div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100"><X className="w-5 h-5 text-slate-500" /></button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg"><Phone className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">{tenant.phone}</span></div>
-            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg"><Mail className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700 truncate">{tenant.email || "—"}</span></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 bg-slate-50 rounded-lg"><p className="text-xs text-slate-400">Rent</p><p className="text-base font-bold">{formatGBP(tenant.rent_amount)}/mo</p></div>
-            <div className="p-3 bg-slate-50 rounded-lg"><p className="text-xs text-slate-400">Tenancy</p><p className="text-sm font-medium">{formatDate(tenant.tenancy_start)} → {formatDate(tenant.tenancy_end)}</p></div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`text-xs px-2.5 py-1 rounded-full ${statusColor(tenant.payment_status)}`}>Payment: {tenant.payment_status}</span>
-            <span className={`text-xs px-2.5 py-1 rounded-full ${tenant.consent_status === "Granted" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}><ShieldCheck className="w-3 h-3 inline mr-1" />Consent: {tenant.consent_status}</span>
-          </div>
-          {tenant.notes && <div className="p-3 bg-slate-50 rounded-lg"><p className="text-xs text-slate-400 mb-1">Notes</p><p className="text-sm text-slate-600">{tenant.notes}</p></div>}
-          {tenantTickets.length > 0 && (
-            <div><h3 className="text-sm font-semibold mb-2">Maintenance history ({tenantTickets.length})</h3>
-              {tenantTickets.map((t) => <div key={t.id} className="flex items-center justify-between py-2 border-b border-slate-100"><span className="text-sm text-slate-700 truncate">{t.description}</span><span className={`text-xs px-1.5 py-0.5 rounded-full ${statusColor(t.status)}`}>{t.status}</span></div>)}
-            </div>
-          )}
-          {conv && <Link to="/whatsapp" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[hsl(var(--sage))] text-white rounded-lg text-sm font-medium"><MessageSquare className="w-4 h-4" /> Open WhatsApp conversation</Link>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function AddTenantModal({ open, onClose, onCreated, properties }) {
   const [form, setForm] = useState({ name: "", phone: "", email: "", property_id: "", tenancy_start: "", tenancy_end: "", rent_amount: 0, payment_status: "Due", consent_status: "Pending", notes: "" });
   const [saving, setSaving] = useState(false);

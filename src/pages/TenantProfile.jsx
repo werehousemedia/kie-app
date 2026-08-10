@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
-import { formatGBP, formatDate, daysUntil, statusColor, timeAgo } from "@/lib/kieUtils";
+import { formatGBP, formatDate, daysUntil, statusColor } from "@/lib/kieUtils";
 import PropertyLink from "@/components/shared/PropertyLink";
 import { TenantAvatar } from "@/components/shared/TenantChip";
 import {

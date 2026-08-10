@@ -9,7 +9,7 @@ import PropertyCalendar from "@/components/property/PropertyCalendar";
 import InventorySection from "@/components/property/InventorySection";
 import AddEventModal from "@/components/property/AddEventModal";
 import {
-  ArrowLeft, Building2, Wallet, Users, Wrench, FileCheck, TrendingUp,
+  ArrowLeft, Building2, Wallet, Wrench, FileCheck, TrendingUp,
   DoorOpen, Pencil, ArrowRight, ExternalLink,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
