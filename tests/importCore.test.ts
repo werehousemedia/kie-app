@@ -200,7 +200,32 @@ assert.equal(elizaAfter.payment_status, "Paid", "re-import must not clobber paym
 assert.equal(r2.created.Tenant, 0, "re-import creates no tenants (idempotent)");
 assert.equal(store2.Unit.filter((u: any) => u.property_id === "p1").length, 3, "re-import creates no extra units");
 
-// 12. Preview mode: identical counts, ZERO writes
+// 12. Tenancy maintenance: one Active tenancy per imported tenant, linked and seeded
+const tenancies = store.Tenancy;
+assert.equal(tenancies.length, 3, "one tenancy per imported tenant");
+const elizaT = tenancies.find((ty: any) => ty.tenant_id === eliza.id);
+assert.ok(elizaT, "Eliza has a tenancy");
+assert.equal(elizaT.property_id, "p1");
+assert.equal(elizaT.unit_id, beltUnits.find((u: any) => u.unit_label === "Room 6").id);
+assert.equal(elizaT.rent_amount, 1150);
+assert.equal(elizaT.rent_history.length, 1);
+assert.equal(elizaT.deposit_scheme ?? "", "");
+const edwardT = tenancies.find((ty: any) => ty.tenant_id === edward.id);
+assert.equal(edwardT.rent_amount, 950);
+
+// 12b. Rent change appends rent_history; unchanged rent appends nothing
+const rentChangeTabs = JSON.parse(JSON.stringify(tabs));
+const elizaRow = rentChangeTabs.find((t: any) => t.name === "Tenants").rows.find((r: any) => r["Tenant Name"] === "Eliza Pemberton");
+elizaRow["Rent (GBP/month)"] = "1200.0";
+await runImport(rerun.db, rentChangeTabs, { tabMappings }, { preview: false });
+const elizaT2 = rerun.store.Tenancy.find((ty: any) => ty.tenant_id === rerun.store.Tenant.find((t: any) => t.name === "Eliza Pemberton").id);
+assert.equal(elizaT2.rent_amount, 1200, "tenancy rent updated");
+assert.equal(elizaT2.rent_history.length, 2, "rent change appended to history");
+const edwardT2 = rerun.store.Tenancy.find((ty: any) => ty.tenant_id === rerun.store.Tenant.find((t: any) => t.name === "Edward McHayward").id);
+assert.equal(edwardT2.rent_history.length, 1, "unchanged rent appends nothing after re-imports");
+assert.equal(rerun.store.Tenancy.length, 3, "re-imports never duplicate tenancies");
+
+// 13. Preview mode: identical counts, ZERO writes
 const { results: pv, calls: pvCalls } = await run(true);
 assert.equal(pvCalls.creates.length, 0, "preview: no creates");
 assert.equal(pvCalls.updates.length, 0, "preview: no updates");
