@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useState } from "react";
+import { useSearchParams, useNavigate, Navigate } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, daysUntil, statusColor } from "@/lib/kieUtils";
@@ -18,21 +18,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 
 export default function Properties() {
-  const { properties, tenants, equipment, compliance, tickets, bills, units, reload, loading } = useKieData();
+  const { properties, tenants, compliance, tickets, units, reload, loading } = useKieData();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [view, setView] = useState("grid");
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
 
-  // Deep link: /properties?property=<id> opens that property's detail view
+  // Legacy deep link: /properties?property=<id> → the detail route
   const propParam = searchParams.get("property");
-  useEffect(() => {
-    if (propParam && properties.length > 0) {
-      const p = properties.find((x) => x.id === propParam);
-      if (p) setSelected(p);
-    }
-  }, [propParam, properties]);
+  if (propParam) return <Navigate to={`/properties/${propParam}`} replace />;
 
   const filtered = properties.filter((p) =>
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,7 +73,7 @@ export default function Properties() {
             const expiring = propCompliance.filter((c) => { const d = daysUntil(c.expiry_date); return d !== null && d <= 60; }).length;
             const openTickets = tickets.filter((t) => t.property_id === p.id && t.status !== "Complete" && t.status !== "Cancelled").length;
             return (
-              <button key={p.id} onClick={() => setSelected(p)} className="bg-white rounded-xl border border-slate-200 p-5 text-left hover:border-[hsl(var(--sage))] hover:shadow-md transition-all">
+              <button key={p.id} onClick={() => navigate(`/properties/${p.id}`)} className="bg-white rounded-xl border border-slate-200 p-5 text-left hover:border-[hsl(var(--sage))] hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sage))]">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-11 h-11 rounded-lg bg-slate-100 flex items-center justify-center">
                     <Building2 className="w-5 h-5 text-slate-500" />
@@ -116,7 +111,7 @@ export default function Properties() {
                 const openTickets = tickets.filter((t) => t.property_id === p.id && t.status !== "Complete" && t.status !== "Cancelled").length;
                 const expiring = compliance.filter((c) => c.property_id === p.id && daysUntil(c.expiry_date) <= 60 && daysUntil(c.expiry_date) !== null).length;
                 return (
-                  <tr key={p.id} onClick={() => setSelected(p)} className="hover:bg-slate-50 cursor-pointer">
+                  <tr key={p.id} onClick={() => navigate(`/properties/${p.id}`)} className="hover:bg-slate-50 cursor-pointer">
                     <td className="px-4 py-3"><p className="font-medium text-slate-900">{p.name}</p><p className="text-xs text-slate-500">{p.postcode}</p></td>
                     <td className="px-4 py-3 text-slate-600">{p.property_type}</td>
                     <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full ${statusColor(p.occupancy_status)}`}>{p.occupancy_status}</span></td>
@@ -130,10 +125,6 @@ export default function Properties() {
             </tbody>
           </table>
         </div>
-      )}
-
-      {selected && (
-        <PropertyDetail property={selected} onClose={() => setSelected(null)} data={{ tenants, equipment, compliance, tickets, bills, units }} />
       )}
 
       <AddPropertyModal open={addOpen} onClose={() => setAddOpen(false)} onCreated={reload} />
