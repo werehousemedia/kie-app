@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Wrench, FileText, AlertCircle, Lightbulb, ArrowRight, Loader2 } from "lucide-react";
+import { Sparkles, Wrench, FileText, Lightbulb, ArrowRight, Loader2 } from "lucide-react";
 import { urgencyColor } from "@/lib/kieUtils";
 
 export default function AIPanel({ triage, triaging, onCreateTicket, onLogToSheet, onSendReply }) {

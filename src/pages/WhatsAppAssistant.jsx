@@ -8,7 +8,7 @@ import AIPanel from "@/components/whatsapp/AIPanel";
 import PropertyIntelligence from "@/components/whatsapp/PropertyIntelligence";
 import TestMessageModal from "@/components/whatsapp/TestMessageModal";
 import ConnectionCard from "@/components/whatsapp/ConnectionCard";
-import { TestTube, Plus, X } from "lucide-react";
+import { TestTube, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 export default function WhatsAppAssistant() {

@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
 import { formatGBP, formatDate, daysUntil, urgencyColor, statusColor, timeAgo } from "@/lib/kieUtils";
 import {
-  Building2, Users, Wallet, AlertTriangle, Wrench, FileCheck,
-  TrendingUp, ArrowRight, MessageSquare, Plus, Bell,
+  Building2, Users, Wallet, AlertTriangle, Wrench, FileCheck, ArrowRight, MessageSquare,
 } from "lucide-react";
 
 function KpiCard({ label, value, sublabel, icon: Icon, tone = "navy" }) {

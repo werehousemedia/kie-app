@@ -1,13 +1,12 @@
 import React, { useState } from "react";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
-import { formatGBP, formatDate, statusColor, daysUntil, logActivity } from "@/lib/kieUtils";
+import { formatGBP, statusColor, daysUntil, logActivity } from "@/lib/kieUtils";
 import { Search, Plus, Star, Phone, Mail, MapPin, Shield, Wrench } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 

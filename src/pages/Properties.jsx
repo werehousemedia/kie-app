@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, daysUntil, statusColor } from "@/lib/kieUtils";
 import { logActivity } from "@/lib/kieUtils";
 import {
-  Building2, Search, LayoutGrid, List, Plus, X, MapPin, Users, Wrench, FileCheck, Wallet, Sheet,
+  Building2, Search, LayoutGrid, List, Plus, X, MapPin, Users, Wrench, FileCheck, Sheet,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 

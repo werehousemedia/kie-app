@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
-import { formatDateTime, statusColor, logActivity } from "@/lib/kieUtils";
+import { formatDateTime, logActivity } from "@/lib/kieUtils";
 import {
   Sheet, HardDrive, MessageSquare, Building, Banknote, Plus, CheckCircle2, XCircle, Loader2, Settings,
 } from "lucide-react";

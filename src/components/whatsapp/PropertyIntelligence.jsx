@@ -1,7 +1,7 @@
 import React from "react";
 import {
   AlertTriangle, ShieldCheck, Wrench, FileWarning, User,
-  Building2, Calendar, Phone, Mail, CheckCircle2, XCircle, Loader2,
+  Building2,
 } from "lucide-react";
 import { useKieData } from "@/lib/useKieData";
 import { formatGBP, formatDate, daysUntil, urgencyColor, statusColor, matchContractors } from "@/lib/kieUtils";

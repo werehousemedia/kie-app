@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useKieData } from "@/lib/useKieData";
-import { formatDateTime, statusColor } from "@/lib/kieUtils";
-import { Search, Activity as ActivityIcon, Filter } from "lucide-react";
+import { formatDateTime } from "@/lib/kieUtils";
+import { Search, Activity as ActivityIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const eventTypeIcons = {

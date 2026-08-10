@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
-import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, CheckCircle2, Bell, CreditCard } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, CheckCircle2, Bell } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
