@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, statusColor, logActivity } from "@/lib/kieUtils";
-import { Search, Plus, Phone, Mail, MessageSquare, X, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, Plus, MessageSquare } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { TenantAvatar } from "@/components/shared/TenantChip";
+import PropertyLink from "@/components/shared/PropertyLink";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 
 export default function Tenants() {
-  const { tenants, properties, conversations, tickets, reload, loading } = useKieData();
+  const { tenants, properties, reload, loading } = useKieData();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
 
   const filtered = tenants.filter((t) =>
     t.name?.toLowerCase().includes(search.toLowerCase()) || t.phone?.includes(search) || t.email?.toLowerCase().includes(search.toLowerCase())
@@ -42,9 +44,14 @@ export default function Tenants() {
             {filtered.map((t) => {
               const prop = properties.find((p) => p.id === t.property_id);
               return (
-                <tr key={t.id} onClick={() => setSelected(t)} className="hover:bg-slate-50 cursor-pointer">
-                  <td className="px-4 py-3"><p className="font-medium text-slate-900">{t.name}</p><p className="text-xs text-slate-500">{t.phone}</p></td>
-                  <td className="px-4 py-3 text-slate-600">{prop?.name || "—"}</td>
+                <tr key={t.id} onClick={() => navigate(`/tenants/${t.id}`)} className="hover:bg-slate-50 cursor-pointer">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <TenantAvatar tenant={t} size="md" />
+                      <div><p className="font-medium text-slate-900">{t.name}</p><p className="text-xs text-slate-500">{t.phone}</p></div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600"><PropertyLink property={prop} /></td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{formatDate(t.tenancy_start)} → {formatDate(t.tenancy_end)}</td>
                   <td className="px-4 py-3 text-right font-medium text-slate-700">{formatGBP(t.rent_amount)}</td>
                   <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full ${statusColor(t.payment_status)}`}>{t.payment_status}</span></td>
@@ -56,7 +63,6 @@ export default function Tenants() {
           </tbody>
         </table>
       </div>
-      {selected && <TenantDetail tenant={selected} onClose={() => setSelected(null)} data={{ properties, conversations, tickets }} />}
       <AddTenantModal open={addOpen} onClose={() => setAddOpen(false)} onCreated={reload} properties={properties} />
     </div>
   );
@@ -108,6 +114,17 @@ function AddTenantModal({ open, onClose, onCreated, properties }) {
     setSaving(true);
     try {
       const t = await base44.entities.Tenant.create(form);
+      // Every tenant gets a Tenancy record — it drives rent/residence history
+      const today = new Date().toISOString().slice(0, 10);
+      const start = form.tenancy_start || today;
+      await base44.entities.Tenancy.create({
+        tenant_id: t.id, property_id: form.property_id,
+        start_date: form.tenancy_start || null, end_date: form.tenancy_end || null,
+        rent_amount: form.rent_amount || 0,
+        status: start > today ? "Upcoming" : "Active",
+        rent_history: [{ date: start, amount: form.rent_amount || 0 }],
+        is_demo: false, source: "manual",
+      });
       await logActivity(base44, { tenant_id: t.id, property_id: form.property_id, event_type: "Tenant update", description: `Tenant added: ${form.name}` });
       toast.success("Tenant added"); onCreated(); onClose();
       setForm({ name: "", phone: "", email: "", property_id: "", tenancy_start: "", tenancy_end: "", rent_amount: 0, payment_status: "Due", consent_status: "Pending", notes: "" });
