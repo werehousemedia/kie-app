@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
+import PropertyLink from "@/components/shared/PropertyLink";
 import { base44 } from "@/api/base44Client";
 import { formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
 import { Search, Plus, FileCheck, AlertTriangle, CheckCircle2, XCircle, Upload, Bell } from "lucide-react";
@@ -87,7 +88,7 @@ export default function Compliance() {
               return (
                 <tr key={c.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium text-slate-800">{c.category}</td>
-                  <td className="px-4 py-3 text-slate-600">{prop?.name || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600"><PropertyLink property={prop} /></td>
                   <td className="px-4 py-3 text-slate-600">{formatDate(c.issue_date)}</td>
                   <td className="px-4 py-3 text-slate-600">{formatDate(c.expiry_date)}</td>
                   <td className="px-4 py-3">{d !== null && <span className={`text-xs font-medium ${d < 0 ? "text-rose-600" : d <= 30 ? "text-amber-600" : "text-slate-500"}`}>{d < 0 ? `${Math.abs(d)}d overdue` : `${d}d`}</span>}</td>
