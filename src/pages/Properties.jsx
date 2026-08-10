@@ -220,7 +220,7 @@ function AddPropertyModal({ open, onClose, onCreated }) {
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async () => {
-    if (!form.name || !form.address || !form.postcode) { toast.error("Name, address and postcode are required"); return; }
+    if (!form.name || !form.address) { toast.error("Name and address are required"); return; }
     setSaving(true);
     try {
       const prop = await base44.entities.Property.create(form);
@@ -241,7 +241,7 @@ function AddPropertyModal({ open, onClose, onCreated }) {
           <div className="col-span-2 space-y-1.5"><Label>Property name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. 7 Willow Court" /></div>
           <div className="col-span-2 space-y-1.5"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
           <div className="space-y-1.5"><Label>Postcode</Label><Input value={form.postcode} onChange={(e) => setForm({ ...form, postcode: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Property type</Label><Select value={form.property_type} onValueChange={(v) => setForm({ ...form, property_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["House", "Flat", "HMO", "Bungalow", "Studio"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-1.5"><Label>Property type</Label><Select value={form.property_type} onValueChange={(v) => setForm({ ...form, property_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["House", "Flat", "HMO", "Bungalow", "Studio", "Maisonette", "Commercial"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
           <div className="space-y-1.5"><Label>HMO status</Label><Select value={form.hmo_status} onValueChange={(v) => setForm({ ...form, hmo_status: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Not HMO", "Licensed HMO", "HMO (unlicensed)"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
           <div className="space-y-1.5"><Label>Units/rooms</Label><Input type="number" value={form.units_count} onChange={(e) => setForm({ ...form, units_count: parseInt(e.target.value) })} /></div>
           <div className="space-y-1.5"><Label>Monthly rent (£)</Label><Input type="number" value={form.monthly_rent_expected} onChange={(e) => setForm({ ...form, monthly_rent_expected: parseFloat(e.target.value) })} /></div>
