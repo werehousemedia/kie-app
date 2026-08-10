@@ -1,9 +1,12 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
 import { formatGBP, formatDate, daysUntil, urgencyColor, statusColor, timeAgo } from "@/lib/kieUtils";
+import { toast } from "sonner";
 import {
   Building2, Users, Wallet, AlertTriangle, Wrench, FileCheck, ArrowRight, MessageSquare,
+  RefreshCw, ClipboardList, Sheet, Loader2,
 } from "lucide-react";
 
 function KpiCard({ label, value, sublabel, icon: Icon, tone = "navy" }) {
@@ -29,7 +32,31 @@ function KpiCard({ label, value, sublabel, icon: Icon, tone = "navy" }) {
 }
 
 export default function Overview() {
-  const { properties, tenants, bills, tickets, compliance, conversations, activity, loading } = useKieData();
+  const { properties, tenants, bills, tickets, compliance, conversations, activity, loading, reload } = useKieData();
+  const navigate = useNavigate();
+  const [syncing, setSyncing] = useState(false);
+
+  const syncNow = async () => {
+    setSyncing(true);
+    try {
+      const res = await base44.functions.invoke("sync_from_sheet", {});
+      const d = res.data || {};
+      if (d.error) throw new Error(d.error);
+      const created = Object.values(d.created || {}).reduce((a, b) => a + b, 0);
+      const updated = Object.values(d.updated || {}).reduce((a, b) => a + b, 0);
+      toast.success(`Synced from sheet: ${created} created, ${updated} updated${d.warnings?.length ? `, ${d.warnings.length} warnings` : ""}`);
+      reload();
+    } catch (e) {
+      const msg = e.response?.data?.error || e.message || "Sync failed";
+      if (msg.includes("No default sheet")) {
+        toast.error(msg, { action: { label: "Set up", onClick: () => navigate("/import") } });
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" /></div>;
 
@@ -65,11 +92,20 @@ export default function Overview() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Good morning, KIE Property</h1>
           <p className="text-sm text-slate-500 mt-0.5">Here's what needs your attention today.</p>
         </div>
+        <button
+          onClick={syncNow}
+          disabled={syncing}
+          className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 hover:border-[hsl(var(--sage))] disabled:opacity-60 shrink-0 transition-colors"
+          title="Pull the latest data from your saved Google Sheet"
+        >
+          {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          {syncing ? "Syncing…" : "Sync from sheet"}
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
