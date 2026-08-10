@@ -13,6 +13,8 @@
         "Gas",
         "Electricity",
         "Water",
+        "Internet",
+        "Service charge",
         "Insurance",
         "Subscription",
         "Contractor invoice",
