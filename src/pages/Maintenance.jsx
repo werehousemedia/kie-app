@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, urgencyColor, statusColor, matchContractors, logActivity } from "@/lib/kieUtils";
@@ -14,16 +15,23 @@ const statusFlow = ["New", "AI triage", "Awaiting landlord approval", "Contracto
 
 export default function Maintenance() {
   const { tickets, properties, tenants, contractors, conversations, triages, reload, loading } = useKieData();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterUrgency, setFilterUrgency] = useState("all");
+  const [filterStatus, setFilterStatus] = useState(() => {
+    const s = searchParams.get("status");
+    return s === "open" || statusFlow.includes(s) ? s : "all";
+  });
+  const [filterUrgency, setFilterUrgency] = useState(() => {
+    const u = searchParams.get("urgency");
+    return ["low", "medium", "high", "emergency"].includes(u) ? u : "all";
+  });
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
   const filtered = tickets.filter((t) => {
     const prop = properties.find((p) => p.id === t.property_id);
     const matchSearch = !search || t.description?.toLowerCase().includes(search.toLowerCase()) || prop?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || t.status === filterStatus;
+    const matchStatus = filterStatus === "all" || (filterStatus === "open" ? (t.status !== "Complete" && t.status !== "Cancelled") : t.status === filterStatus);
     const matchUrgency = filterUrgency === "all" || t.urgency === filterUrgency;
     return matchSearch && matchStatus && matchUrgency;
   });
@@ -42,7 +50,7 @@ export default function Maintenance() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search tickets..." className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--sage))]/30" />
         </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}><SelectTrigger className="w-48 bg-white"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem>{statusFlow.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}><SelectTrigger className="w-48 bg-white"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem><SelectItem value="open">All open</SelectItem>{statusFlow.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
         <Select value={filterUrgency} onValueChange={setFilterUrgency}><SelectTrigger className="w-36 bg-white"><SelectValue placeholder="Urgency" /></SelectTrigger><SelectContent><SelectItem value="all">All urgency</SelectItem>{["low", "medium", "high", "emergency"].map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent></Select>
       </div>
 
