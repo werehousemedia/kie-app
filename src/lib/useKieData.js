@@ -7,7 +7,7 @@ import { useDemoFilter } from "@/lib/DemoFilterContext";
 const DEMO_FILTERED = [
   "properties", "units", "tenants", "equipment", "conversations",
   "messages", "triages", "tickets", "compliance", "bills",
-  "transactions", "activity",
+  "transactions", "activity", "tenancies",
 ];
 
 export function useKieData() {
@@ -15,7 +15,7 @@ export function useKieData() {
   const [raw, setRaw] = useState({
     properties: [], units: [], tenants: [], equipment: [], conversations: [],
     messages: [], triages: [], tickets: [], contractors: [], compliance: [],
-    bills: [], transactions: [], activity: [], integrationLogs: [],
+    bills: [], transactions: [], activity: [], integrationLogs: [], tenancies: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,7 +25,8 @@ export function useKieData() {
     try {
       const [
         properties, units, tenants, equipment, conversations, messages,
-        triages, tickets, contractors, compliance, bills, transactions, activity, integrationLogs
+        triages, tickets, contractors, compliance, bills, transactions, activity, integrationLogs,
+        tenancies
       ] = await Promise.all([
         base44.entities.Property.list(),
         base44.entities.Unit.list(),
@@ -41,13 +42,14 @@ export function useKieData() {
         base44.entities.Transaction.list(),
         base44.entities.ActivityEvent.list("-timestamp", 200),
         base44.entities.IntegrationLog.list("-timestamp", 100),
+        base44.entities.Tenancy.list(),
       ]);
       setRaw({
         properties: properties || [], units: units || [], tenants: tenants || [],
         equipment: equipment || [], conversations: conversations || [], messages: messages || [],
         triages: triages || [], tickets: tickets || [], contractors: contractors || [],
         compliance: compliance || [], bills: bills || [], transactions: transactions || [],
-        activity: activity || [], integrationLogs: integrationLogs || [],
+        activity: activity || [], integrationLogs: integrationLogs || [], tenancies: tenancies || [],
       });
     } catch (e) {
       setError(e.message || "Failed to load data");
