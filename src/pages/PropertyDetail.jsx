@@ -81,8 +81,10 @@ export default function PropertyDetail() {
   }
 
   // Derived money metrics — tenancies are the source of truth for income
-  const monthlyIncome = activeTenancies.length > 0
-    ? activeTenancies.reduce((s, ty) => s + (ty.rent_amount || 0), 0)
+  // Income counts only tenancies that are actually paying today (not Upcoming).
+  const payingTenancies = activeTenancies.filter((ty) => ty.status === "Active");
+  const monthlyIncome = payingTenancies.length > 0
+    ? payingTenancies.reduce((s, ty) => s + (ty.rent_amount || 0), 0)
     : propTenants.reduce((s, t) => s + (t.rent_amount || 0), 0) || property.monthly_rent_expected || 0;
   const grossYield = property.purchase_value > 0 && monthlyIncome > 0
     ? ((monthlyIncome * 12) / property.purchase_value) * 100
