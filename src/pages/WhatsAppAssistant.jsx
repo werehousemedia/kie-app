@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
 import { logActivity } from "@/lib/kieUtils";
@@ -8,7 +8,7 @@ import AIPanel from "@/components/whatsapp/AIPanel";
 import PropertyIntelligence from "@/components/whatsapp/PropertyIntelligence";
 import TestMessageModal from "@/components/whatsapp/TestMessageModal";
 import ConnectionCard from "@/components/whatsapp/ConnectionCard";
-import { TestTube, Plus } from "lucide-react";
+import { TestTube, Plus, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
 export default function WhatsAppAssistant() {
@@ -20,6 +20,13 @@ export default function WhatsAppAssistant() {
   const [triage, setTriage] = useState(null);
   const [triaging, setTriaging] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
+  const [commsSheetId, setCommsSheetId] = useState(null);
+
+  useEffect(() => {
+    base44.entities.AppSetting.filter({ key: "comms_log_sheet_id" })
+      .then((rows) => rows[0]?.value && setCommsSheetId(rows[0].value))
+      .catch(() => {});
+  }, []);
 
   const selected = conversations.find((c) => c.id === selectedId);
   const tenant = selected ? tenants.find((t) => t.id === selected.tenant_id) : null;
@@ -135,25 +142,18 @@ export default function WhatsAppAssistant() {
   const handleLogToSheet = useCallback(async () => {
     if (!selected) return;
     try {
-      await base44.entities.IntegrationLog.create({
-        service: "Google Sheets",
-        event: "Log WhatsApp interaction",
-        status: "success",
-        details: `Logged conversation with ${tenant?.name} at ${property?.name}`,
-        timestamp: new Date().toISOString(),
-      });
-      await logActivity(base44, {
-        tenant_id: selected.tenant_id,
-        property_id: selected.property_id,
-        event_type: "Integration sync",
-        description: `Logged WhatsApp interaction to Google Sheets`,
-      });
-      toast.success("Logged to Google Sheets (simulated)");
+      const res = await base44.functions.invoke("log_to_sheet", { conversation_id: selected.id });
+      if (res.data?.error) throw new Error(res.data.error);
+      if (res.data?.sheet_id) setCommsSheetId(res.data.sheet_id);
+      toast.success("Logged to the communications sheet");
       reload();
     } catch (e) {
-      toast.error("Failed to log");
+      const msg = e.response?.data?.error || e.message || "Failed to log";
+      toast.error(msg.includes("403") || msg.toLowerCase().includes("write access") || msg.toLowerCase().includes("insufficient")
+        ? "Google connector needs write access — re-authorise it in Base44 → Integrations"
+        : msg);
     }
-  }, [selected, tenant, property, reload]);
+  }, [selected, reload]);
 
   const handleSendReply = useCallback(async () => {
     if (!triage?.suggested_reply) return;
@@ -161,46 +161,35 @@ export default function WhatsAppAssistant() {
     toast.success("Reply sent");
   }, [triage, handleSendMessage]);
 
+  // Runs the full autonomous pipeline server-side: message → triage →
+  // auto-reply → ticket (if urgent) → Google Sheet log row. Identical path
+  // to what a real WhatsApp webhook will use.
   const handleTestMessage = useCallback(async (tenantId, message) => {
+    setTriaging(true);
+    setTriage(null);
     try {
-      const tenant = tenants.find((t) => t.id === tenantId);
-      let conversation = conversations.find((c) => c.tenant_id === tenantId);
-      if (!conversation) {
-        conversation = await base44.entities.Conversation.create({
-          tenant_id: tenantId,
-          property_id: tenant?.property_id,
-          status: "Active",
-          urgency: "medium",
-          unread_count: 1,
-          last_message: message,
-          last_message_at: new Date().toISOString(),
-        });
+      const res = await base44.functions.invoke("handle_inbound_message", { tenant_id: tenantId, content: message });
+      const d = res.data || {};
+      if (d.error) throw new Error(d.error);
+      setSelectedId(d.conversation_id);
+      setTriage(d.triage || null);
+      if (d.sheet_id) setCommsSheetId(d.sheet_id);
+      const bits = ["AI replied to the tenant"];
+      if (d.ticket_id) bits.push("maintenance ticket created");
+      bits.push(d.sheet_logged ? "logged to sheet" : "sheet log failed");
+      (d.sheet_logged ? toast.success : toast.warning)(bits.join(" · "));
+      if (!d.sheet_logged && d.sheet_error) {
+        toast.error(d.sheet_error.toLowerCase().includes("insufficient") || d.sheet_error.includes("403") || d.sheet_error.toLowerCase().includes("write access")
+          ? "Google connector needs write access — re-authorise it in Base44 → Integrations"
+          : `Sheet: ${d.sheet_error}`);
       }
-      await base44.entities.Message.create({
-        conversation_id: conversation.id,
-        sender: "tenant",
-        content: message,
-        timestamp: new Date().toISOString(),
-      });
-      await base44.entities.Conversation.update(conversation.id, {
-        last_message: message,
-        last_message_at: new Date().toISOString(),
-        unread_count: (conversation.unread_count || 0) + 1,
-      });
-      await logActivity(base44, {
-        tenant_id: tenantId,
-        property_id: tenant?.property_id,
-        event_type: "WhatsApp message",
-        description: `Incoming WhatsApp: ${message.slice(0, 80)}`,
-      });
-      setSelectedId(conversation.id);
-      toast.success("Message received — running AI triage");
       reload();
-      setTimeout(() => handleTriage(), 500);
     } catch (e) {
-      toast.error("Failed to simulate message");
+      toast.error(e.response?.data?.error || e.message || "Failed to process message");
+    } finally {
+      setTriaging(false);
     }
-  }, [tenants, conversations, reload, handleTriage]);
+  }, [reload]);
 
   const handleAssignContractor = useCallback(async (contractor) => {
     if (!selected) return;
@@ -236,13 +225,26 @@ export default function WhatsAppAssistant() {
           <h1 className="text-2xl font-bold text-slate-900">WhatsApp Assistant</h1>
           <p className="text-sm text-slate-500 mt-0.5">AI-powered tenant communications console</p>
         </div>
-        <button
-          onClick={() => setTestOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--sage))] text-white rounded-lg text-sm font-medium hover:bg-[hsl(var(--sage))]/90 transition-colors shadow-sm"
-        >
-          <TestTube className="w-4 h-4" />
-          Test incoming message
-        </button>
+        <div className="flex items-center gap-2">
+          {commsSheetId && (
+            <a
+              href={`https://docs.google.com/spreadsheets/d/${commsSheetId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Comms log
+            </a>
+          )}
+          <button
+            onClick={() => setTestOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--sage))] text-white rounded-lg text-sm font-medium hover:bg-[hsl(var(--sage))]/90 transition-colors shadow-sm"
+          >
+            <TestTube className="w-4 h-4" />
+            Test incoming message
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col" style={{ height: "calc(100vh - 220px)" }}>
