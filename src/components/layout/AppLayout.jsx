@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import QuickAddModal from "@/components/shared/QuickAddModal";
 import { DemoFilterProvider } from "@/lib/DemoFilterContext";
-import { DataHealthBanner } from "@/lib/useKieData";
+import DataHealthBanner from "@/components/shared/DataHealthBanner";
 
 export default function AppLayout() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
