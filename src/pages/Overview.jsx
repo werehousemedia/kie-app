@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
+import { buildPropertyEvents, KIND_META } from "@/lib/calendarEvents";
 import { formatGBP, formatDate, daysUntil, urgencyColor, statusColor, timeAgo } from "@/lib/kieUtils";
 import { toast } from "sonner";
 import {
@@ -44,7 +45,7 @@ function KpiCard({ label, value, sublabel, icon: Icon, tone = "navy", to }) {
 }
 
 export default function Overview() {
-  const { properties, tenants, bills, tickets, compliance, conversations, activity, loading, reload } = useKieData();
+  const { properties, tenants, bills, tickets, compliance, conversations, activity, tenancies, equipment, loading, reload } = useKieData();
   const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
 
@@ -82,6 +83,22 @@ export default function Overview() {
     return d !== null && d <= 60;
   });
   const urgentConversations = conversations.filter((c) => c.urgency === "high" || c.urgency === "emergency");
+
+  // Portfolio performance — tenancies are the income source of truth
+  const activeTenancies = tenancies.filter((ty) => ty.status === "Active");
+  const monthlyIncome = activeTenancies.length > 0
+    ? activeTenancies.reduce((s, ty) => s + (ty.rent_amount || 0), 0)
+    : tenants.reduce((s, t) => s + (t.rent_amount || 0), 0);
+  const monthlyExpenses = bills.filter((b) => !b.is_income && b.status !== "Paid" && daysUntil(b.due_date) !== null && daysUntil(b.due_date) >= -31 && daysUntil(b.due_date) <= 31).reduce((s, b) => s + (b.amount || 0), 0);
+  const portfolioValue = properties.reduce((s, p) => s + (p.purchase_value || 0), 0);
+  const blendedYield = portfolioValue > 0 && monthlyIncome > 0 ? ((monthlyIncome * 12) / portfolioValue) * 100 : null;
+
+  // Upcoming 14 days across the whole portfolio — same derivation as the property calendars
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const horizon = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+  const upcomingEvents = buildPropertyEvents({ propertyId: null, bills, tickets, compliance, equipment, tenancies, tenants, properties })
+    .filter((e) => e.date >= todayStr && e.date <= horizon)
+    .slice(0, 8);
 
   const needsAttention = [
     ...overdueRent > 0 ? [{ type: "Rent overdue", detail: `${formatGBP(overdueRent)} overdue rent`, severity: "critical", to: "/finance?tab=rent&status=Overdue" }] : [],
@@ -170,7 +187,7 @@ export default function Overview() {
                 }).length;
                 const propTickets = openTickets.filter((t) => t.property_id === p.id).length;
                 return (
-                  <Link key={p.id} to={`/properties?property=${p.id}`} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                  <Link key={p.id} to={`/properties/${p.id}`} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                     <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
                       <Building2 className="w-5 h-5 text-slate-500" />
                     </div>
@@ -190,25 +207,29 @@ export default function Overview() {
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-900 mb-4">Upcoming money timeline</h2>
-            <div className="space-y-2">
-              {bills.filter((b) => b.status !== "Paid").sort((a, b) => new Date(a.due_date) - new Date(b.due_date)).slice(0, 6).map((b) => {
-                const d = daysUntil(b.due_date);
-                const prop = properties.find((p) => p.id === b.property_id);
-                return (
-                  <div key={b.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50">
-                    <div className={`w-1 h-10 rounded-full ${b.is_income ? "bg-emerald-400" : "bg-slate-300"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800">{b.category}</p>
-                      <p className="text-xs text-slate-500">{prop?.name || "—"} · {formatDate(b.due_date)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-semibold ${b.is_income ? "text-emerald-600" : "text-slate-700"}`}>{b.is_income ? "+" : ""}{formatGBP(b.amount)}</p>
-                      <p className={`text-xs ${d < 0 ? "text-rose-500" : "text-slate-400"}`}>{d < 0 ? `${Math.abs(d)}d overdue` : `in ${d}d`}</p>
-                    </div>
+            <h2 className="text-base font-semibold text-slate-900 mb-4">Upcoming (14 days)</h2>
+            {upcomingEvents.length === 0 && <p className="text-sm text-slate-400">Nothing due in the next two weeks.</p>}
+            <div className="space-y-1">
+              {upcomingEvents.map((e) => (
+                <Link key={e.id} to={e.to} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 group">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${KIND_META[e.kind]?.dot}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate group-hover:underline decoration-[hsl(var(--sage))] underline-offset-2">{e.label}</p>
+                    {e.sub && <p className="text-xs text-slate-500">{e.sub}</p>}
                   </div>
-                );
-              })}
+                  <span className="text-xs text-slate-400 shrink-0">{formatDate(e.date)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-slate-900 mb-4">Portfolio performance</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Link to="/finance?tab=rent" className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"><p className="text-xs text-slate-500">Monthly income</p><p className="text-lg font-bold text-emerald-600">{formatGBP(monthlyIncome)}</p></Link>
+              <Link to="/finance?tab=bills" className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"><p className="text-xs text-slate-500">Bills due (±31d)</p><p className="text-lg font-bold text-slate-900">{formatGBP(monthlyExpenses)}</p></Link>
+              <Link to="/finance" className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"><p className="text-xs text-slate-500">Net /mo</p><p className={`text-lg font-bold ${monthlyIncome - monthlyExpenses >= 0 ? "text-slate-900" : "text-rose-600"}`}>{formatGBP(monthlyIncome - monthlyExpenses)}</p></Link>
+              <Link to="/properties" className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"><p className="text-xs text-slate-500">Portfolio value</p><p className="text-lg font-bold text-slate-900">{portfolioValue > 0 ? formatGBP(portfolioValue) : "—"}</p>{blendedYield && <p className="text-[11px] text-slate-500">{blendedYield.toFixed(1)}% gross yield</p>}</Link>
             </div>
           </div>
         </div>
