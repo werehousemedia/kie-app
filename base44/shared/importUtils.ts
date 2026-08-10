@@ -6,15 +6,88 @@ export function normalizeAddress(address: string, postcode: string): string {
   return `${a}|${p}`;
 }
 
-export function normalizePhone(phone: string): string {
-  let p = (phone || "").replace(/\D/g, "");
+function digitsOf(phone: any): string {
+  let s = String(phone ?? "").trim();
+  if (/^\d+\.0$/.test(s)) s = s.slice(0, -2); // numeric cell artefact "1234.0"
+  return s.replace(/\D/g, "");
+}
+
+export function normalizePhone(phone: any): string {
+  let p = digitsOf(phone);
   if (p.startsWith("44")) p = p.slice(2);
   if (p.startsWith("0")) p = p.slice(1);
   return p;
 }
 
-export function normalizeName(name: string): string {
-  return (name || "").toLowerCase().trim().replace(/\s+/g, " ");
+export function formatUkPhone(phone: any): string {
+  const core = normalizePhone(phone);
+  if (core.length === 10) return `0${core.slice(0, 4)} ${core.slice(4)}`;
+  return String(phone ?? "").trim();
+}
+
+export function normalizeName(name: any): string {
+  return String(name ?? "").toLowerCase().replace(/[.,'"()&-]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function parseIntSafe(v: any): number | null {
+  const n = parseFloat(String(v ?? "").replace(/[^0-9.]/g, ""));
+  return isNaN(n) ? null : Math.round(n);
+}
+
+export function isExampleRow(row: Record<string, any>): boolean {
+  return Object.values(row).some((v) => String(v ?? "").toUpperCase().includes("EXAMPLE ROW"));
+}
+
+export function isValidEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s ?? "").trim());
+}
+
+const COMPLIANCE_ALIASES: Record<string, string> = {
+  "gas safety certificate": "Gas Safety Certificate",
+  "gas safety certificate cp12": "Gas Safety Certificate",
+  "cp12": "Gas Safety Certificate",
+  "epc": "EPC",
+  "eicr": "EICR",
+  "electrical installation condition report": "EICR",
+  "boiler service": "Boiler service",
+  "smoke co alarm": "Smoke/CO alarm",
+  "smoke co alarm check": "Smoke/CO alarm",
+  "smoke alarm": "Smoke/CO alarm",
+  "co alarm": "Smoke/CO alarm",
+  "hmo licence": "HMO licence",
+  "hmo license": "HMO licence",
+  "insurance": "Insurance",
+  "landlord insurance": "Insurance",
+  "tenancy agreement": "Tenancy agreement",
+  "inventory": "Inventory",
+  "legionella risk assessment": "Legionella Risk Assessment",
+  "pat test": "PAT Test",
+  "portable appliance test": "PAT Test",
+  "deposit protection certificate": "Deposit Protection Certificate",
+};
+
+export function normalizeComplianceCategory(raw: string): { category: string; known: boolean } {
+  const key = normalizeName(String(raw ?? "").replace(/\//g, " "));
+  const hit = COMPLIANCE_ALIASES[key];
+  return hit ? { category: hit, known: true } : { category: String(raw ?? "").trim(), known: false };
+}
+
+export function mapFuelType(raw: string): string | null {
+  const s = String(raw ?? "").toLowerCase().trim();
+  if (!s) return null;
+  if (s.includes("gas") && !s.includes("lpg")) return "Gas";
+  if (s.includes("electric")) return "Electric";
+  if (s.includes("oil")) return "Oil";
+  if (s.includes("lpg")) return "LPG";
+  if (s.includes("heat pump") || s.includes("ashp") || s.includes("gshp")) return "Heat pump";
+  return "Other";
+}
+
+export function deriveOccupancy(unitStatuses: string[]): string {
+  const vacant = unitStatuses.filter((s) => s === "Vacant" || s === "Void").length;
+  if (unitStatuses.length > 0 && vacant === unitStatuses.length) return "Vacant";
+  if (vacant > 0) return "Partially occupied";
+  return "Fully occupied";
 }
 
 export function parseDate(str: string): string | null {
@@ -50,6 +123,10 @@ export function parseVacant(str: any): boolean | null {
   return null;
 }
 
+export function parseYesNo(v: any): boolean | null {
+  return parseVacant(v);
+}
+
 export function computeComplianceStatus(expiryDate: string): string {
   if (!expiryDate) return "Missing";
   const days = Math.floor((new Date(expiryDate).getTime() - Date.now()) / 86400000);
@@ -80,48 +157,73 @@ export function mapHmoStatus(classType: string): string {
   return "Not HMO";
 }
 
-// Canonical KIE template — tab name → entity + field → suggested header keywords
+// Canonical KIE template — tab name → entity + field → suggested header keywords.
+// Exact template headers (lowercased) are listed FIRST per field: suggestColumn
+// scores exact matches highest so the shipped template always auto-maps cleanly.
 export const CANONICAL_TEMPLATE = {
   Property: {
     matchTab: ["properties", "property"],
     fields: {
-      name: ["name", "property", "title"],
+      name: ["property name", "name", "property", "title"],
       address: ["address", "addr", "line1"],
       postcode: ["postcode", "post code", "zip"],
-      vacant: ["vacant", "empty", "void"],
-      property_type: ["class", "type", "property type"],
+      property_type: ["property type", "class", "type"],
+      hmo: ["hmo (yes/no)", "hmo"],
       units_count: ["beds", "bedrooms", "rooms", "units"],
+      vacant: ["vacant (yes/no)", "vacant", "empty", "void"],
+      council_tax_band: ["council tax band", "council tax"],
+      notes: ["notes", "note", "comments"],
+    },
+  },
+  Unit: {
+    matchTab: ["units", "unit", "rooms"],
+    fields: {
+      property: ["property name", "property", "address"],
+      unit_label: ["room/unit name", "room", "unit", "room name", "unit name"],
+      vacant: ["vacant (yes/no)", "vacant", "empty"],
+      tenant_name: ["tenant name", "tenant"],
+      rent_amount: ["rent (gbp/month)", "rent", "monthly rent"],
+      notes: ["notes", "note", "comments"],
     },
   },
   Tenant: {
     matchTab: ["tenants", "tenant"],
     fields: {
-      name: ["name", "tenant", "tenant name"],
+      name: ["tenant name", "name", "tenant"],
       phone: ["phone", "mobile", "tel", "contact"],
       email: ["email", "e-mail"],
-      property: ["property", "property name", "address"],
-      tenancy_start: ["start", "contract start", "tenancy start", "from"],
-      tenancy_end: ["end", "contract end", "tenancy end", "to", "expiry"],
-      rent_amount: ["rent", "monthly rent", "amount"],
+      property: ["property name", "property", "address"],
+      unit: ["room/unit", "room", "unit"],
+      tenancy_start: ["tenancy start", "start", "contract start", "from"],
+      tenancy_end: ["tenancy end", "end", "contract end", "to"],
+      rent_amount: ["rent (gbp/month)", "rent", "monthly rent", "amount"],
+      deposit_scheme: ["deposit scheme", "deposit"],
+      notes: ["notes", "note", "comments"],
     },
   },
   Equipment: {
     matchTab: ["boilers", "equipment", "boiler"],
     fields: {
-      property: ["property", "property name", "address"],
+      property: ["property name", "property", "address"],
       make: ["make", "brand", "manufacturer"],
-      model: ["model", "type"],
-      install_date: ["install", "installed", "install date", "fitted"],
-      last_service_date: ["last service", "serviced", "service date", "last service date"],
+      model: ["model"],
+      fuel_type: ["fuel type", "fuel"],
+      install_date: ["install date", "install", "installed", "fitted"],
+      last_service_date: ["last service date", "last service", "serviced", "service date"],
+      warranty_expiry: ["warranty expiry", "warranty"],
+      location: ["location in property", "location"],
+      notes: ["notes", "note", "comments"],
     },
   },
   ComplianceRecord: {
-    matchTab: ["contracts", "compliance", "documents", "certificates"],
+    matchTab: ["compliance", "contracts", "documents", "certificates"],
     fields: {
-      property: ["property", "property name", "address"],
+      property: ["property name", "property", "address"],
       category: ["document type", "type", "category", "document"],
-      issue_date: ["issue", "issue date", "issued", "start"],
-      expiry_date: ["expiry", "expiry date", "expires", "end", "valid until"],
+      issue_date: ["issue date", "issue", "issued"],
+      expiry_date: ["expiry date", "expiry", "expires", "valid until"],
+      provider: ["provider/engineer", "provider", "engineer", "contractor"],
+      notes: ["notes", "note", "comments"],
     },
   },
 };
