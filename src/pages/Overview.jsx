@@ -9,7 +9,7 @@ import {
   RefreshCw, ClipboardList, Sheet, Loader2,
 } from "lucide-react";
 
-function KpiCard({ label, value, sublabel, icon: Icon, tone = "navy" }) {
+function KpiCard({ label, value, sublabel, icon: Icon, tone = "navy", to }) {
   const tones = {
     navy: "bg-[hsl(var(--navy))] text-white",
     sage: "bg-[hsl(var(--sage))] text-white",
@@ -17,18 +17,30 @@ function KpiCard({ label, value, sublabel, icon: Icon, tone = "navy" }) {
     amber: "bg-amber-50 text-amber-900 border border-amber-200",
     rose: "bg-rose-50 text-rose-900 border border-rose-200",
   };
-  return (
-    <div className={`rounded-xl p-5 ${tones[tone]} shadow-sm`}>
+  const inner = (
+    <>
       <div className="flex items-start justify-between mb-3">
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${tone === "white" ? "bg-slate-100" : "bg-white/15"}`}>
           <Icon className="w-[18px] h-[18px]" />
         </div>
+        {to && <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity ${tone === "white" ? "text-slate-400" : "text-white/60"}`} />}
       </div>
       <p className="text-2xl font-bold tracking-tight">{value}</p>
       <p className={`text-sm font-medium mt-0.5 ${tone === "white" ? "text-slate-500" : "text-white/70"}`}>{label}</p>
       {sublabel && <p className={`text-xs mt-1 ${tone === "white" ? "text-slate-400" : "text-white/50"}`}>{sublabel}</p>}
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className={`group block rounded-xl p-5 ${tones[tone]} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sage))]`}
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={`rounded-xl p-5 ${tones[tone]} shadow-sm`}>{inner}</div>;
 }
 
 export default function Overview() {
@@ -72,22 +84,24 @@ export default function Overview() {
   const urgentConversations = conversations.filter((c) => c.urgency === "high" || c.urgency === "emergency");
 
   const needsAttention = [
-    ...overdueRent > 0 ? [{ type: "Rent overdue", detail: `${formatGBP(overdueRent)} overdue rent`, severity: "critical", to: "/finance" }] : [],
+    ...overdueRent > 0 ? [{ type: "Rent overdue", detail: `${formatGBP(overdueRent)} overdue rent`, severity: "critical", to: "/finance?tab=bills&status=Overdue" }] : [],
     ...openTickets.filter((t) => t.urgency === "emergency" || t.urgency === "high").map((t) => ({
-      type: "Urgent repair", detail: t.description?.slice(0, 60), severity: "critical", to: "/maintenance"
+      type: "Urgent repair", detail: t.description?.slice(0, 60), severity: "critical", to: `/maintenance?status=open&urgency=${t.urgency}`
     })),
     ...expiringCompliance.filter((c) => daysUntil(c.expiry_date) <= 30).map((c) => ({
-      type: c.category, detail: `Expires ${formatDate(c.expiry_date)} (${daysUntil(c.expiry_date)}d)`, severity: "warning", to: "/compliance"
+      type: c.category, detail: `Expires ${formatDate(c.expiry_date)} (${daysUntil(c.expiry_date)}d)`, severity: "warning", to: "/compliance?status=expiring"
     })),
   ];
 
   const quickActions = [
     { label: "Add property", icon: Building2, to: "/properties" },
-    { label: "Log tenant issue", icon: MessageSquare, to: "/whatsapp" },
+    { label: "Log tenant issue", icon: ClipboardList, to: "/whatsapp" },
     { label: "WhatsApp assistant", icon: MessageSquare, to: "/whatsapp" },
     { label: "Upload document", icon: FileCheck, to: "/compliance" },
     { label: "Add bill", icon: Wallet, to: "/finance" },
     { label: "Create job", icon: Wrench, to: "/maintenance" },
+    { label: "Import from sheet", icon: Sheet, to: "/import" },
+    { label: "Sync from sheet", icon: RefreshCw, onClick: syncNow },
   ];
 
   return (
@@ -109,14 +123,14 @@ export default function Overview() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Total properties" value={properties.length} icon={Building2} tone="navy" />
-        <KpiCard label="Occupied units" value={occupiedUnits} sublabel={`${tenants.length} tenants`} icon={Users} tone="white" />
-        <KpiCard label="Rent due this month" value={formatGBP(rentDue)} icon={Wallet} tone="sage" />
-        <KpiCard label="Overdue rent" value={formatGBP(overdueRent)} icon={AlertTriangle} tone={overdueRent > 0 ? "rose" : "white"} />
-        <KpiCard label="Upcoming bills (30d)" value={upcomingBills.length} sublabel={formatGBP(upcomingBills.reduce((s, b) => s + (b.amount || 0), 0))} icon={Wallet} tone="white" />
-        <KpiCard label="Open maintenance" value={openTickets.length} sublabel={`${openTickets.filter(t => t.urgency === "emergency").length} emergency`} icon={Wrench} tone="white" />
-        <KpiCard label="Compliance expiring (60d)" value={expiringCompliance.length} sublabel={`${expiringCompliance.filter(c => daysUntil(c.expiry_date) <= 30).length} within 30d`} icon={FileCheck} tone={expiringCompliance.length > 0 ? "amber" : "white"} />
-        <KpiCard label="Active conversations" value={conversations.length} sublabel={`${urgentConversations.length} urgent`} icon={MessageSquare} tone="white" />
+        <KpiCard label="Total properties" value={properties.length} icon={Building2} tone="navy" to="/properties" />
+        <KpiCard label="Occupied units" value={occupiedUnits} sublabel={`${tenants.length} tenants`} icon={Users} tone="white" to="/tenants" />
+        <KpiCard label="Rent due this month" value={formatGBP(rentDue)} icon={Wallet} tone="sage" to="/finance?tab=bills" />
+        <KpiCard label="Overdue rent" value={formatGBP(overdueRent)} icon={AlertTriangle} tone={overdueRent > 0 ? "rose" : "white"} to="/finance?tab=bills&status=Overdue" />
+        <KpiCard label="Upcoming bills (30d)" value={upcomingBills.length} sublabel={formatGBP(upcomingBills.reduce((s, b) => s + (b.amount || 0), 0))} icon={Wallet} tone="white" to="/finance?tab=bills" />
+        <KpiCard label="Open maintenance" value={openTickets.length} sublabel={`${openTickets.filter(t => t.urgency === "emergency").length} emergency`} icon={Wrench} tone="white" to="/maintenance?status=open" />
+        <KpiCard label="Compliance expiring (60d)" value={expiringCompliance.length} sublabel={`${expiringCompliance.filter(c => daysUntil(c.expiry_date) <= 30).length} within 30d`} icon={FileCheck} tone={expiringCompliance.length > 0 ? "amber" : "white"} to="/compliance?status=expiring" />
+        <KpiCard label="Active conversations" value={conversations.length} sublabel={`${urgentConversations.length} urgent`} icon={MessageSquare} tone="white" to="/whatsapp" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -156,7 +170,7 @@ export default function Overview() {
                 }).length;
                 const propTickets = openTickets.filter((t) => t.property_id === p.id).length;
                 return (
-                  <Link key={p.id} to="/properties" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                  <Link key={p.id} to={`/properties?property=${p.id}`} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                     <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
                       <Building2 className="w-5 h-5 text-slate-500" />
                     </div>
@@ -205,8 +219,17 @@ export default function Overview() {
             <div className="grid grid-cols-2 gap-2">
               {quickActions.map((a) => {
                 const Icon = a.icon;
+                const cls = "flex flex-col items-center gap-1.5 p-3 rounded-lg border border-slate-200 hover:border-[hsl(var(--sage))] hover:bg-slate-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sage))]";
+                if (a.onClick) {
+                  return (
+                    <button key={a.label} onClick={a.onClick} disabled={syncing} className={`${cls} disabled:opacity-60`}>
+                      <Icon className={`w-5 h-5 text-slate-600 ${a.label.startsWith("Sync") && syncing ? "animate-spin" : ""}`} />
+                      <span className="text-xs font-medium text-slate-700 text-center">{a.label}</span>
+                    </button>
+                  );
+                }
                 return (
-                  <Link key={a.label} to={a.to} className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-slate-200 hover:border-[hsl(var(--sage))] hover:bg-slate-50 transition-all">
+                  <Link key={a.label} to={a.to} className={cls}>
                     <Icon className="w-5 h-5 text-slate-600" />
                     <span className="text-xs font-medium text-slate-700 text-center">{a.label}</span>
                   </Link>
