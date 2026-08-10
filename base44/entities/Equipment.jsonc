@@ -18,6 +18,19 @@
         "Other"
       ]
     },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Heating & boiler",
+        "Appliance",
+        "Furniture",
+        "Electronics",
+        "Kitchen",
+        "Garden",
+        "Safety & security",
+        "Other"
+      ]
+    },
     "make": {
       "type": "string"
     },
@@ -39,6 +52,33 @@
       "type": "string",
       "format": "date"
     },
+    "purchase_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "purchase_price": {
+      "type": "number"
+    },
+    "current_value": {
+      "type": "number"
+    },
+    "supplier": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "New",
+        "Good",
+        "Fair",
+        "Worn",
+        "Needs replacing"
+      ]
+    },
+    "replacement_due": {
+      "type": "string",
+      "format": "date"
+    },
     "last_service_date": {
       "type": "string",
       "format": "date"
@@ -57,6 +97,12 @@
     "location": {
       "type": "string",
       "description": "Where in the property, e.g. Kitchen cupboard"
+    },
+    "photo_url": {
+      "type": "string"
+    },
+    "receipt_url": {
+      "type": "string"
     },
     "service_history": {
       "type": "string"
