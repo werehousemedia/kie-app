@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
+import PropertyLink from "@/components/shared/PropertyLink";
 import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
 import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, CheckCircle2, Bell } from "lucide-react";
@@ -111,7 +112,7 @@ export default function Finance() {
                 return (
                   <div key={b.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50">
                     <div className={`w-1 h-8 rounded-full ${b.is_income ? "bg-emerald-400" : "bg-slate-300"}`} />
-                    <div className="flex-1"><p className="text-sm font-medium text-slate-800">{b.category}</p><p className="text-xs text-slate-500">{prop?.name} · {formatDate(b.due_date)}</p></div>
+                    <div className="flex-1"><p className="text-sm font-medium text-slate-800">{b.category}</p><p className="text-xs text-slate-500"><PropertyLink property={prop} /> · {formatDate(b.due_date)}</p></div>
                     <p className={`text-sm font-semibold ${b.is_income ? "text-emerald-600" : "text-slate-700"}`}>{b.is_income ? "+" : ""}{formatGBP(b.amount)}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor(b.status)}`}>{b.status}</span>
                   </div>
@@ -172,7 +173,7 @@ function BillTable({ bills, properties, tenants, onMarkPaid, onReminder, showRem
           {bills.map((b) => (
             <tr key={b.id} className="hover:bg-slate-50">
               <td className="px-4 py-3 font-medium text-slate-800">{b.category}</td>
-              <td className="px-4 py-3 text-slate-600">{properties.find((p) => p.id === b.property_id)?.name || "—"}</td>
+              <td className="px-4 py-3 text-slate-600"><PropertyLink property={properties.find((p) => p.id === b.property_id)} /></td>
               <td className="px-4 py-3 text-slate-600">{formatDate(b.due_date)}</td>
               <td className="px-4 py-3 text-right font-medium">{formatGBP(b.amount)}</td>
               <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full ${statusColor(b.status)}`}>{b.status}</span></td>
