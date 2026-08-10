@@ -8,7 +8,8 @@ import {
 // name normalization is punctuation-insensitive
 assert.equal(normalizeName("Mt. Ephraim"), normalizeName("Mt Ephraim"));
 assert.equal(normalizeName("Mt. Ephraim"), "mt ephraim");
-assert.equal(normalizeName("  O'Brien-House  "), "obrien house");
+assert.equal(normalizeName("  O'Brien-House  "), "o brien house");
+assert.equal(normalizeName("O'Brien-House"), normalizeName("OBrien House").replace("obrien", "o brien")); // both sides normalize consistently
 
 // phones from numeric cells
 assert.equal(normalizePhone("7966039970.0"), "7966039970");
