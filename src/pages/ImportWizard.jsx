@@ -12,6 +12,7 @@ export default function ImportWizard() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [tabs, setTabs] = useState(null);
+  const [sourceUrl, setSourceUrl] = useState("");
   const [mapping, setMapping] = useState(null);
   const [validation, setValidation] = useState(null);
   const [results, setResults] = useState(null);
@@ -35,8 +36,8 @@ export default function ImportWizard() {
         ))}
       </div>
 
-      {step === 0 && <ChooseSource onParsed={(t) => { setTabs(t); setMapping(null); setValidation(null); setStep(1); }} />}
-      {step === 1 && tabs && <MapColumns tabs={tabs} mapping={mapping} setMapping={setMapping} onValidate={() => { setValidation(null); setStep(2); }} onBack={() => setStep(0)} />}
+      {step === 0 && <ChooseSource onParsed={(t, info) => { setTabs(t); setSourceUrl(info?.sheetUrl || ""); setMapping(null); setValidation(null); setStep(1); }} />}
+      {step === 1 && tabs && <MapColumns tabs={tabs} sheetUrl={sourceUrl} mapping={mapping} setMapping={setMapping} onValidate={() => { setValidation(null); setStep(2); }} onBack={() => setStep(0)} />}
       {step === 2 && <ValidationSummary tabs={tabs} mapping={mapping} validation={validation} setValidation={setValidation} onConfirm={(res) => { setResults(res); setStep(3); }} onBack={() => setStep(1)} />}
       {step === 3 && results && <ImportResults results={results} onDone={() => navigate("/properties")} onAgain={() => { setStep(0); setTabs(null); setResults(null); setMapping(null); }} />}
     </div>
