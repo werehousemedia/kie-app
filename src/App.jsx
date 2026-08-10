@@ -18,6 +18,7 @@ import Contractors from '@/pages/Contractors';
 import Compliance from '@/pages/Compliance';
 import Activity from '@/pages/Activity';
 import Integrations from '@/pages/Integrations';
+import ImportWizard from '@/pages/ImportWizard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -53,6 +54,7 @@ const AuthenticatedApp = () => {
           <Route path="/compliance" element={<Compliance />} />
           <Route path="/activity" element={<Activity />} />
           <Route path="/integrations" element={<Integrations />} />
+          <Route path="/import" element={<ImportWizard />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

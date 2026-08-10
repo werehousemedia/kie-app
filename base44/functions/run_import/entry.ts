@@ -103,17 +103,20 @@ export default async function(req: Request): Promise<Response> {
         // Check for a Units tab with rows for this property
         const unitMapped = tabMap.get("Unit");
         let unitRows: any[] = [];
+        let ucmV: any = null;
         if (unitMapped && isHmo) {
-          const { tab: uTab, columnMap: ucm } = unitMapped;
+          const { tab: uTab, columnMap: cmU } = unitMapped;
+          ucmV = cmU;
+          const targetProp = existing || propertyByName.get(normalizeName(name));
           unitRows = uTab.rows.filter((r: any) => {
-            const ref = ucm.property ? r[ucm.property] : "";
-            return findProperty(ref) === (existing || propertyByName.get(normalizeName(name)));
+            const ref = cmU.property ? r[cmU.property] : "";
+            return findProperty(ref) === targetProp;
           });
         }
 
         if (unitRows.length > 0) {
           occupancyRule = "unit_level_derived";
-          const vacantUnits = unitRows.filter((r: any) => parseVacant(ucm(unitMapped).vacant ? r[ucm(unitMapped).vacant] : "") === true).length;
+          const vacantUnits = unitRows.filter((r: any) => parseVacant(ucmV?.vacant ? r[ucmV.vacant] : "") === true).length;
           if (vacantUnits === unitRows.length) occupancyStatus = "Vacant";
           else if (vacantUnits > 0) occupancyStatus = "Partially occupied";
           else occupancyStatus = "Fully occupied";
@@ -146,7 +149,12 @@ export default async function(req: Request): Promise<Response> {
             propertyByName.set(normalizeName(created.name), created);
             propId = created.id;
           } else {
-            propId = "preview";
+            // In preview mode, register an in-memory placeholder so downstream
+            // tabs (Tenants/Equipment/Compliance) can match the not-yet-created property.
+            const placeholder = { id: "preview_" + name, ...record };
+            propertyByAddr.set(key, placeholder);
+            propertyByName.set(normalizeName(name), placeholder);
+            propId = placeholder.id;
           }
           results.created.Property++;
         }
@@ -321,6 +329,3 @@ export default async function(req: Request): Promise<Response> {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
-
-// helper for unit vacancy counting
-function ucm(m: any) { return m.columnMap; }

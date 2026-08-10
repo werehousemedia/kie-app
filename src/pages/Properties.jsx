@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { formatGBP, formatDate, daysUntil, statusColor } from "@/lib/kieUtils";
 import { logActivity } from "@/lib/kieUtils";
 import {
-  Building2, Search, LayoutGrid, List, Plus, X, MapPin, Users, Wrench, FileCheck, Wallet,
+  Building2, Search, LayoutGrid, List, Plus, X, MapPin, Users, Wrench, FileCheck, Wallet, Sheet,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -38,9 +39,14 @@ export default function Properties() {
           <h1 className="text-2xl font-bold text-slate-900">Properties</h1>
           <p className="text-sm text-slate-500 mt-0.5">{properties.length} properties · {units.length} units</p>
         </div>
-        <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--navy))] text-white rounded-lg text-sm font-medium hover:bg-[hsl(var(--navy-light))]">
-          <Plus className="w-4 h-4" /> Add property
-        </button>
+        <div className="flex items-center gap-2">
+          <Link to="/import" className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50">
+            <Sheet className="w-4 h-4" /> Import from sheet
+          </Link>
+          <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--navy))] text-white rounded-lg text-sm font-medium hover:bg-[hsl(var(--navy-light))]">
+            <Plus className="w-4 h-4" /> Add property
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

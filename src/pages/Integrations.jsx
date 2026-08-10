@@ -5,6 +5,7 @@ import { formatDateTime, statusColor, logActivity } from "@/lib/kieUtils";
 import {
   Sheet, HardDrive, MessageSquare, Building, Banknote, Plus, CheckCircle2, XCircle, Loader2, Settings,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function Integrations() {
@@ -39,7 +40,10 @@ export default function Integrations() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div><h1 className="text-2xl font-bold text-slate-900">Integrations & Settings</h1><p className="text-sm text-slate-500 mt-0.5">Connect external services and configure AI operational rules</p></div>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div><h1 className="text-2xl font-bold text-slate-900">Integrations & Settings</h1><p className="text-sm text-slate-500 mt-0.5">Connect external services and configure AI operational rules</p></div>
+        <Link to="/import" className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--sage))] text-white rounded-lg text-sm font-medium hover:bg-[hsl(var(--sage))]/90 shrink-0"><Sheet className="w-4 h-4" /> Import from Google Sheets</Link>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {integrations.map((i) => {

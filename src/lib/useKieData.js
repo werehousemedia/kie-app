@@ -1,22 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useDemoFilter } from "@/lib/DemoFilterContext";
+
+// Entities whose demo records are hidden when the toggle is on.
+// Contractors and IntegrationLogs stay visible in both modes.
+const DEMO_FILTERED = [
+  "properties", "units", "tenants", "equipment", "conversations",
+  "messages", "triages", "tickets", "compliance", "bills",
+  "transactions", "activity",
+];
 
 export function useKieData() {
-  const [data, setData] = useState({
-    properties: [],
-    units: [],
-    tenants: [],
-    equipment: [],
-    conversations: [],
-    messages: [],
-    triages: [],
-    tickets: [],
-    contractors: [],
-    compliance: [],
-    bills: [],
-    transactions: [],
-    activity: [],
-    integrationLogs: [],
+  const { hideDemo } = useDemoFilter();
+  const [raw, setRaw] = useState({
+    properties: [], units: [], tenants: [], equipment: [], conversations: [],
+    messages: [], triages: [], tickets: [], contractors: [], compliance: [],
+    bills: [], transactions: [], activity: [], integrationLogs: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,21 +42,12 @@ export function useKieData() {
         base44.entities.ActivityEvent.list("-timestamp", 200),
         base44.entities.IntegrationLog.list("-timestamp", 100),
       ]);
-      setData({
-        properties: properties || [],
-        units: units || [],
-        tenants: tenants || [],
-        equipment: equipment || [],
-        conversations: conversations || [],
-        messages: messages || [],
-        triages: triages || [],
-        tickets: tickets || [],
-        contractors: contractors || [],
-        compliance: compliance || [],
-        bills: bills || [],
-        transactions: transactions || [],
-        activity: activity || [],
-        integrationLogs: integrationLogs || [],
+      setRaw({
+        properties: properties || [], units: units || [], tenants: tenants || [],
+        equipment: equipment || [], conversations: conversations || [], messages: messages || [],
+        triages: triages || [], tickets: tickets || [], contractors: contractors || [],
+        compliance: compliance || [], bills: bills || [], transactions: transactions || [],
+        activity: activity || [], integrationLogs: integrationLogs || [],
       });
     } catch (e) {
       setError(e.message || "Failed to load data");
@@ -67,6 +57,13 @@ export function useKieData() {
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  const data = useMemo(() => {
+    if (!hideDemo) return raw;
+    const out = { ...raw };
+    for (const k of DEMO_FILTERED) out[k] = (raw[k] || []).filter((x) => !x.is_demo);
+    return out;
+  }, [raw, hideDemo]);
 
   return { ...data, loading, error, reload: loadAll };
 }
