@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
 import { formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
@@ -12,15 +13,23 @@ import { toast } from "sonner";
 
 const categories = ["Gas Safety Certificate", "EPC", "EICR", "Boiler service", "Smoke/CO alarm", "HMO licence", "Insurance", "Tenancy agreement", "Inventory"];
 
+const STATUS_PARAM_MAP = { expiring: "Expiring soon", overdue: "Overdue", missing: "Missing", compliant: "Compliant" };
+
 export default function Compliance() {
   const { compliance, properties, tenants, reload, loading } = useKieData();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState(() => STATUS_PARAM_MAP[searchParams.get("status")] || "all");
   const [addOpen, setAddOpen] = useState(false);
 
   const filtered = compliance.filter((c) => {
     const prop = properties.find((p) => p.id === c.property_id);
-    return !search || c.category?.toLowerCase().includes(search.toLowerCase()) || prop?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || c.category?.toLowerCase().includes(search.toLowerCase()) || prop?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === "all" || c.status === filterStatus;
+    return matchSearch && matchStatus;
   });
+
+  const toggleStatus = (status) => setFilterStatus((cur) => (cur === status ? "all" : status));
 
   const compliant = compliance.filter((c) => c.status === "Compliant").length;
   const expiring = compliance.filter((c) => c.status === "Expiring soon").length;
@@ -43,10 +52,22 @@ export default function Compliance() {
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-2 mb-1"><CheckCircle2 className="w-4 h-4 text-emerald-500" /><span className="text-xs text-slate-500">Compliant</span></div><p className="text-xl font-bold text-emerald-600">{compliant}</p></div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-2 mb-1"><AlertTriangle className="w-4 h-4 text-amber-500" /><span className="text-xs text-slate-500">Expiring soon</span></div><p className="text-xl font-bold text-amber-600">{expiring}</p></div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-2 mb-1"><XCircle className="w-4 h-4 text-rose-500" /><span className="text-xs text-slate-500">Overdue</span></div><p className="text-xl font-bold text-rose-600">{overdue}</p></div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-2 mb-1"><FileCheck className="w-4 h-4 text-slate-400" /><span className="text-xs text-slate-500">Missing</span></div><p className="text-xl font-bold text-slate-600">{missing}</p></div>
+        {[
+          { status: "Compliant", count: compliant, icon: CheckCircle2, iconCls: "text-emerald-500", countCls: "text-emerald-600" },
+          { status: "Expiring soon", count: expiring, icon: AlertTriangle, iconCls: "text-amber-500", countCls: "text-amber-600" },
+          { status: "Overdue", count: overdue, icon: XCircle, iconCls: "text-rose-500", countCls: "text-rose-600" },
+          { status: "Missing", count: missing, icon: FileCheck, iconCls: "text-slate-400", countCls: "text-slate-600" },
+        ].map(({ status, count, icon: Icon, iconCls, countCls }) => (
+          <button
+            key={status}
+            onClick={() => toggleStatus(status)}
+            className={`bg-white rounded-xl border p-4 text-left transition-all hover:border-[hsl(var(--sage))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sage))] ${filterStatus === status ? "border-[hsl(var(--sage))] ring-1 ring-[hsl(var(--sage))]" : "border-slate-200"}`}
+            title={filterStatus === status ? "Click to clear filter" : `Show only ${status.toLowerCase()} records`}
+          >
+            <div className="flex items-center gap-2 mb-1"><Icon className={`w-4 h-4 ${iconCls}`} /><span className="text-xs text-slate-500">{status}</span></div>
+            <p className={`text-xl font-bold ${countCls}`}>{count}</p>
+          </button>
+        ))}
       </div>
 
       <div className="relative max-w-sm">
