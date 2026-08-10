@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import QuickAddModal from "@/components/shared/QuickAddModal";
 import { DemoFilterProvider } from "@/lib/DemoFilterContext";
+import { DataHealthBanner } from "@/lib/useKieData";
 
 export default function AppLayout() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -14,6 +15,7 @@ export default function AppLayout() {
         <Sidebar />
         <div className="ml-64">
           <Topbar onQuickAdd={() => setQuickAddOpen(true)} />
+          <DataHealthBanner />
           <main className="p-4 sm:p-6">
             <Outlet />
           </main>
