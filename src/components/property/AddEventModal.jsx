@@ -59,7 +59,10 @@ export default function AddEventModal({ open, onClose, onSaved, propertyId, kind
           property_id: propertyId, category: form.category,
           issue_date: form.issue_date || null, expiry_date: form.expiry_date,
           provider: form.provider || "",
-          status: new Date(form.expiry_date) < new Date() ? "Overdue" : "Compliant",
+          status: (() => {
+            const days = Math.floor((new Date(form.expiry_date).getTime() - Date.now()) / 86400000);
+            return days < 0 ? "Overdue" : days <= 60 ? "Expiring soon" : "Compliant";
+          })(),
           is_demo: false, source: "manual",
         });
         await logActivity(base44, { property_id: propertyId, event_type: "Document upload", description: `${form.category} recorded, expires ${form.expiry_date}` });
