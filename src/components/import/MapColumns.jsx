@@ -3,9 +3,9 @@ import { base44 } from "@/api/base44Client";
 import { CANONICAL_FIELDS, suggestColumn, buildAutoMapping } from "@/lib/importTemplate";
 import { ArrowRight, ArrowLeft, Save } from "lucide-react";
 
-const ENTITIES = ["Property", "Tenant", "Equipment", "ComplianceRecord"];
+const ENTITIES = ["Property", "Unit", "Tenant", "Equipment", "ComplianceRecord"];
 
-export default function MapColumns({ tabs, mapping, setMapping, onValidate, onBack }) {
+export default function MapColumns({ tabs, mapping, setMapping, onValidate, onBack, sheetUrl }) {
   const [local, setLocal] = useState(mapping || buildAutoMapping(tabs));
   const [saveTpl, setSaveTpl] = useState(true);
 
@@ -33,8 +33,17 @@ export default function MapColumns({ tabs, mapping, setMapping, onValidate, onBa
   const handleNext = async () => {
     setMapping(local);
     if (saveTpl) {
+      // Upsert the single default template (never create duplicates). This is
+      // also the config the Sync Now / nightly sync path reads.
       try {
-        await base44.entities.ImportTemplate.create({ name: "KIE template", source_type: "sheet_url", tab_mappings: local, is_default: true });
+        const existing = await base44.entities.ImportTemplate.filter({ is_default: true });
+        const data = { name: "KIE template", source_type: "sheet_url", tab_mappings: local, is_default: true };
+        if (sheetUrl) data.sheet_url = sheetUrl;
+        if (existing.length > 0) {
+          await base44.entities.ImportTemplate.update(existing[0].id, data);
+        } else {
+          await base44.entities.ImportTemplate.create({ ...data, sync_secret: crypto.randomUUID() });
+        }
       } catch (e) { /* non-fatal */ }
     }
     onValidate();
@@ -88,7 +97,7 @@ export default function MapColumns({ tabs, mapping, setMapping, onValidate, onBa
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" checked={saveTpl} onChange={(e) => setSaveTpl(e.target.checked)} />
-          <Save className="w-3.5 h-3.5" /> Save as "KIE template" for future imports
+          <Save className="w-3.5 h-3.5" /> Save mapping &amp; sheet for future imports and auto-sync
         </label>
         <div className="flex items-center gap-2">
           <button onClick={onBack} className="flex items-center gap-1 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-4 h-4" /> Back</button>
