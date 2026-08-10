@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  AlertTriangle, ShieldCheck, Wrench, FileWarning, User,
+  AlertTriangle, ShieldCheck, Wrench, FileWarning,
   Building2,
 } from "lucide-react";
 import { useKieData } from "@/lib/useKieData";
