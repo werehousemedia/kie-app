@@ -351,6 +351,45 @@ export async function runImport(db: any, tabs: Tab[], mapping: Mapping, opts: { 
         if (!preview && !String(unit.id).startsWith("preview_")) await db.Unit.update(unit.id, unitPatch);
         Object.assign(unit, unitPatch);
       }
+
+      // Maintain the Tenancy record (the temporal edge of the graph).
+      // Skipped in preview: tenancies aren't part of the wizard's counts.
+      if (!preview && !String(tenantRec.id).startsWith("preview_") && !String(property.id).startsWith("preview_")) {
+        const today = new Date().toISOString().slice(0, 10);
+        const openTenancies = (await db.Tenancy.filter({ tenant_id: tenantRec.id, is_demo: { $ne: true } }))
+          .filter((ty: any) => ty.status !== "Ended");
+        const rent = record.rent_amount || 0;
+        if (openTenancies.length === 0) {
+          const start = record.tenancy_start || today;
+          await db.Tenancy.create({
+            tenant_id: tenantRec.id,
+            property_id: property.id,
+            unit_id: unit && !String(unit.id).startsWith("preview_") ? unit.id : "",
+            start_date: record.tenancy_start,
+            end_date: record.tenancy_end,
+            rent_amount: rent,
+            deposit_scheme: record.deposit_scheme || "",
+            status: start > today ? "Upcoming" : "Active",
+            rent_history: [{ date: start, amount: rent }],
+            source: "sheet_import",
+            is_demo: false,
+          });
+        } else {
+          const ty = openTenancies[0];
+          const patch: any = {
+            property_id: property.id,
+            start_date: record.tenancy_start,
+            end_date: record.tenancy_end,
+            rent_amount: rent,
+          };
+          if (unit && !String(unit.id).startsWith("preview_")) patch.unit_id = unit.id;
+          if (record.deposit_scheme) patch.deposit_scheme = record.deposit_scheme;
+          if ((ty.rent_amount || 0) !== rent) {
+            patch.rent_history = [...(ty.rent_history || []), { date: today, amount: rent }];
+          }
+          await db.Tenancy.update(ty.id, patch);
+        }
+      }
     }
   }
 
