@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { logActivity } from "@/lib/kieUtils";
+import { runTaskEngine } from "@/lib/taskUtils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ export default function AddEventModal({ open, onClose, onSaved, propertyId, kind
           is_demo: false, source: "manual",
         });
         await logActivity(base44, { property_id: propertyId, event_type: "Maintenance created", description: `Job created: ${form.description.slice(0, 60)}` });
+        runTaskEngine(); // surface the matching Task immediately
       } else {
         if (!form.expiry_date) { toast.error("Expiry date is required"); setSaving(false); return; }
         await base44.entities.ComplianceRecord.create({
