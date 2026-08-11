@@ -53,7 +53,7 @@ async function sendWhatsApp(settings: Record<string, string>, to: string, text: 
 
 export default async function(req: Request): Promise<Response> {
   const base44 = createClientFromRequest(req);
-  const db = base44.asServiceRole.entities;
+  const db = stampEntities(base44.asServiceRole.entities, WS_FALLBACK);
 
   // --- Meta subscription verification ---
   if (req.method === "GET") {
