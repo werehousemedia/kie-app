@@ -15,6 +15,7 @@ import {
   Upload,
   Moon,
   Eye,
+  Palmtree,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
@@ -37,6 +38,7 @@ const TABS = [
 
 const MORE_LINKS = [
   { to: "/tenants", label: "Tenants", icon: Users },
+  { to: "/shortlets", label: "Short lets", icon: Palmtree },
   { to: "/maintenance", label: "Maintenance", icon: Wrench, badgeKey: "tickets" },
   { to: "/compliance", label: "Compliance", icon: FileCheck, badgeKey: "compliance" },
   { to: "/contractors", label: "Contractors", icon: HardHat },
