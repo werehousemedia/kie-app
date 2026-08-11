@@ -1,124 +1,236 @@
-import React, { useState } from "react";
-import { useKieData } from "@/lib/useKieData";
-import { base44 } from "@/api/base44Client";
-import { formatDateTime, logActivity } from "@/lib/kieUtils";
-import {
-  Sheet, HardDrive, MessageSquare, Building, Banknote, Plus, CheckCircle2, XCircle, Loader2, Settings,
-} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import {
+  FileSpreadsheet,
+  RefreshCw,
+  CalendarDays,
+  MessageSquare,
+  Upload,
+  Copy,
+  ExternalLink,
+  Moon,
+  Eye,
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import { base44 } from "@/api/base44Client";
+import { useKieData } from "@/lib/useKieData";
+import { timeAgo, statusColor } from "@/lib/kieUtils";
+import { useDemoFilter } from "@/lib/DemoFilterContext";
+import PageHeader from "@/components/shared/PageHeader";
+import EmptyState from "@/components/shared/EmptyState";
+import { Switch } from "@/components/ui/switch";
 
+function Card({ icon: Icon, title, chip, chipTone = "muted", children, action }) {
+  const chipClass =
+    chipTone === "good"
+      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+      : chipTone === "warn"
+        ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+        : "bg-muted text-muted-foreground";
+  return (
+    <div className="rounded-xl border bg-card p-4">
+      <div className="flex items-center gap-2.5 mb-2">
+        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-semibold flex-1 min-w-0 truncate">{title}</p>
+        {chip && (
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0 ${chipClass}`}>
+            {chip}
+          </span>
+        )}
+      </div>
+      <div className="text-xs text-muted-foreground space-y-1.5">{children}</div>
+      {action && <div className="mt-3">{action}</div>}
+    </div>
+  );
+}
+
+// Everything on this page is REAL: live sync state, a working sync button,
+// the actual ICS feed URL, honest channel status, and the genuine event log.
+// No decorative config forms.
 export default function Integrations() {
   const { integrationLogs, reload } = useKieData();
-  const [testing, setTesting] = useState(null);
+  const { resolvedTheme, setTheme } = useTheme();
+  const { hideDemo, setHideDemo } = useDemoFilter();
+  const [template, setTemplate] = useState(null);
+  const [templateLoaded, setTemplateLoaded] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
-  const integrations = [
-    { id: "sheets", name: "Google Sheets", icon: Sheet, desc: "Sync property, tenant, compliance and boiler data; log WhatsApp interactions", status: "ready", color: "bg-emerald-50 text-emerald-600" },
-    { id: "drive", name: "Google Drive", icon: HardDrive, desc: "Store compliance documents and property files by folder mapping", status: "ready", color: "bg-blue-50 text-blue-600" },
-    { id: "whatsapp", name: "WhatsApp Business", icon: MessageSquare, desc: "Live WhatsApp messaging via Business API or Twilio", status: "sandbox", color: "bg-amber-50 text-amber-600" },
-    { id: "lettings", name: "KIE Lettings", icon: Building, desc: "Sync lettings data — API URL and key required", status: "coming", color: "bg-slate-100 text-slate-500" },
-    { id: "sales", name: "KIE Sales", icon: Building, desc: "Sync sales pipeline data — API URL and key required", status: "coming", color: "bg-slate-100 text-slate-500" },
-    { id: "bank", name: "Bank / Payment Provider", icon: Banknote, desc: "Open Banking integration for live rent collection and bill payments", status: "coming", color: "bg-slate-100 text-slate-500" },
-  ];
+  useEffect(() => {
+    base44.entities.ImportTemplate.filter({ is_default: true })
+      .then((rows) => setTemplate(rows?.[0] || null))
+      .catch(() => {})
+      .finally(() => setTemplateLoaded(true));
+  }, [syncing]);
 
-  const handleTest = async (id) => {
-    setTesting(id);
+  const syncNow = async () => {
+    setSyncing(true);
     try {
-      await base44.entities.IntegrationLog.create({
-        service: integrations.find((i) => i.id === id).name,
-        event: "Test connection",
-        status: id === "lettings" || id === "sales" || id === "bank" ? "failed" : "success",
-        details: id === "lettings" || id === "sales" || id === "bank" ? "Not yet configured" : "Connection test successful (simulated)",
-        timestamp: new Date().toISOString(),
-      });
-      await logActivity(base44, { event_type: "Integration sync", description: `Test connection: ${integrations.find((i) => i.id === id).name}` });
-      toast.success("Test completed");
+      const res = await base44.functions.invoke("sync_from_sheet", {});
+      const d = res?.data || {};
+      if (d.error) throw new Error(d.error);
+      const created = Object.values(d.created || {}).reduce((a, b) => a + b, 0);
+      const updated = Object.values(d.updated || {}).reduce((a, b) => a + b, 0);
+      const warn = (d.warnings || []).length;
+      toast.success(`Synced — ${created} created, ${updated} updated${warn ? `, ${warn} warning${warn === 1 ? "" : "s"}` : ""}`);
       reload();
-    } catch (e) { toast.error("Test failed"); }
-    finally { setTesting(null); }
+    } catch (e) {
+      toast.error(`Sync failed: ${e?.response?.data?.error || e.message}`);
+    } finally {
+      setSyncing(false);
+    }
   };
+
+  const icsUrl = useMemo(
+    () => (template?.sync_secret ? `https://kie-app.base44.app/functions/calendar_feed?key=${template.sync_secret}` : null),
+    [template]
+  );
+
+  const copyIcs = async () => {
+    if (!icsUrl) return;
+    try {
+      await navigator.clipboard.writeText(icsUrl);
+      toast.success("Calendar feed URL copied — add it in Google Calendar → Other calendars → From URL");
+    } catch {
+      toast.error("Couldn't access the clipboard");
+    }
+  };
+
+  const recentLogs = integrationLogs.slice(0, 25);
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div><h1 className="text-2xl font-bold text-slate-900">Integrations & Settings</h1><p className="text-sm text-slate-500 mt-0.5">Connect external services and configure AI operational rules</p></div>
-        <Link to="/import" className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--sage))] text-white rounded-lg text-sm font-medium hover:bg-[hsl(var(--sage))]/90 shrink-0"><Sheet className="w-4 h-4" /> Import from Google Sheets</Link>
-      </div>
+      <PageHeader
+        title="Integrations & Settings"
+        subtitle="Live connections and app preferences — everything here is real"
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {integrations.map((i) => {
-          const Icon = i.icon;
-          return (
-            <div key={i.id} className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${i.color}`}><Icon className="w-5 h-5" /></div>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${i.status === "ready" ? "bg-emerald-100 text-emerald-700" : i.status === "sandbox" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
-                  {i.status === "ready" ? "Ready" : i.status === "sandbox" ? "Sandbox" : "Coming later"}
-                </span>
-              </div>
-              <h3 className="text-sm font-semibold text-slate-900">{i.name}</h3>
-              <p className="text-xs text-slate-500 mt-1 mb-3">{i.desc}</p>
-              {i.id === "sheets" && (
-                <div className="space-y-2 mb-3">
-                  <input placeholder="Spreadsheet ID" className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg" />
-                  <div className="text-xs text-slate-400">Sheet mapping: Properties → Tab 1, Tenants → Tab 2, Compliance → Tab 3, Boilers → Tab 4</div>
-                  <label className="flex items-center gap-2 text-xs text-slate-600"><input type="checkbox" defaultChecked /> Log WhatsApp interactions</label>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card
+          icon={FileSpreadsheet}
+          title="Google Sheets — source of truth"
+          chip={!templateLoaded ? "…" : template ? "Connected" : "Not set up"}
+          chipTone={template ? "good" : "warn"}
+        >
+          {template ? (
+            <>
+              <p>
+                Property, tenant and rent data syncs one-way from your sheet nightly at 3am
+                {template.last_synced ? ` — last synced ${timeAgo(template.last_synced)}` : ""}.
+              </p>
+              {template.sheet_url && (
+                <a href={template.sheet_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[hsl(var(--sage))] font-medium hover:underline">
+                  Open the sheet <ExternalLink className="w-3 h-3" />
+                </a>
               )}
-              {i.id === "drive" && (
-                <div className="space-y-2 mb-3">
-                  <input placeholder="Root folder ID" className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg" />
-                  <div className="text-xs text-slate-400">Folder mapping: One folder per property, subfolders for compliance/photos</div>
-                </div>
-              )}
-              {i.id === "whatsapp" && (
-                <div className="space-y-2 mb-3">
-                  <input placeholder="+44 7xxx xxx xxx" className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg" />
-                  <input placeholder="Webhook URL" className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg" />
-                </div>
-              )}
-              {(i.id === "lettings" || i.id === "sales") && (
-                <div className="space-y-2 mb-3">
-                  <input placeholder="API URL" className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg" />
-                  <input placeholder="API Key" type="password" className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg" />
-                </div>
-              )}
+              <p className="text-amber-600 dark:text-amber-400">
+                Comms-log writing needs the Sheets connector re-authorised with write access
+                (Base44 dashboard → Connectors) — appends fail gracefully until then.
+              </p>
+            </>
+          ) : (
+            <p>Run the import wizard once to connect your sheet — it becomes the single source of truth for portfolio data.</p>
+          )}
+          <div className="flex gap-2 pt-1">
+            {template && (
               <button
-                onClick={() => handleTest(i.id)}
-                disabled={testing === i.id}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-[hsl(var(--navy))] text-white rounded-lg hover:bg-[hsl(var(--navy-light))] disabled:opacity-50"
+                onClick={syncNow}
+                disabled={syncing}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
               >
-                {testing === i.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                {i.status === "coming" ? "Configure" : "Test connection"}
+                <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing…" : "Sync now"}
               </button>
-            </div>
-          );
-        })}
-      </div>
+            )}
+            <Link to="/import" className="inline-flex items-center gap-1.5 px-3 py-1.5 border bg-card hover:bg-muted rounded-lg text-xs font-medium transition-colors">
+              <Upload className="w-3.5 h-3.5" /> Import wizard
+            </Link>
+          </div>
+        </Card>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <div className="flex items-center gap-2 mb-4"><Settings className="w-4 h-4 text-slate-500" /><h2 className="text-base font-semibold text-slate-900">AI Operational Rules</h2></div>
-        <div className="space-y-4">
-          <div><label className="text-sm font-medium text-slate-700">Emergency wording</label><textarea defaultValue="If you smell gas or suspect a gas leak, call the National Gas Emergency Service on 0800 111 999 immediately. Do not use electrical switches." className="w-full mt-1 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg" rows={2} /></div>
-          <div><label className="text-sm font-medium text-slate-700">Preferred contractor selection logic</label><select className="w-full mt-1 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg"><option>Preferred first, then highest rated, then nearest</option><option>Highest rated only</option><option>Nearest only</option><option>Lowest average quote</option></select></div>
-          <div><label className="text-sm font-medium text-slate-700">Landlord approval threshold</label><select className="w-full mt-1 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg"><option>Require approval for all jobs</option><option>Auto-approve jobs under £150</option><option>Auto-approve jobs under £300</option><option>Auto-approve emergency jobs</option></select></div>
-          <div><label className="text-sm font-medium text-slate-700">Message tone</label><select className="w-full mt-1 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg"><option>Professional and warm</option><option>Formal</option><option>Friendly and casual</option></select></div>
+        <Card
+          icon={CalendarDays}
+          title="Calendar feed (ICS)"
+          chip={icsUrl ? "Live" : "Needs setup"}
+          chipTone={icsUrl ? "good" : "warn"}
+        >
+          <p>
+            Rent dates, compliance expiries, tenancy changes and short-let turnarounds as a
+            subscribable calendar — updates automatically in Google/Apple Calendar.
+          </p>
+          {icsUrl ? (
+            <button
+              onClick={copyIcs}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border bg-card hover:bg-muted rounded-lg text-xs font-medium transition-colors mt-1"
+            >
+              <Copy className="w-3.5 h-3.5" /> Copy feed URL
+            </button>
+          ) : (
+            <p>Connect the sheet first — the feed shares its access key.</p>
+          )}
+        </Card>
+
+        <Card icon={MessageSquare} title="WhatsApp channel" chip="Sandbox mode" chipTone="warn">
+          <p>
+            The inbound pipeline is live end-to-end: message → AI triage → auto-reply →
+            auto-ticket → comms log. Try it from the Inbox with a demo scenario.
+          </p>
+          <p>Live WhatsApp delivery switches on with the Business API connector.</p>
+          <Link to="/whatsapp" className="inline-flex items-center gap-1 text-[hsl(var(--sage))] font-medium hover:underline">
+            Open the Inbox <ExternalLink className="w-3 h-3" />
+          </Link>
+        </Card>
+
+        <div className="rounded-xl border bg-card p-4">
+          <p className="text-sm font-semibold mb-2">App preferences</p>
+          <div className="rounded-xl border divide-y divide-border">
+            <label className="flex items-center gap-3 px-3.5 py-2.5">
+              <Moon className="w-[18px] h-[18px] text-muted-foreground" />
+              <span className="flex-1 text-sm font-medium">Dark mode</span>
+              <Switch
+                checked={resolvedTheme === "dark"}
+                onCheckedChange={(v) => setTheme(v ? "dark" : "light")}
+              />
+            </label>
+            <label className="flex items-center gap-3 px-3.5 py-2.5">
+              <Eye className="w-[18px] h-[18px] text-muted-foreground" />
+              <span className="flex-1 text-sm font-medium">Show demo data</span>
+              <Switch checked={!hideDemo} onCheckedChange={(v) => setHideDemo(!v)} />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Demo records (marked with the eye in the top bar) power client walkthroughs —
+            hide them to see only your real portfolio.
+          </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-base font-semibold text-slate-900 mb-3">Integration Event Log</h2>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {integrationLogs.length === 0 ? <p className="text-sm text-slate-400 text-center py-4">No sync events yet</p> :
-            integrationLogs.map((l) => (
-              <div key={l.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50">
-                {l.status === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : l.status === "failed" ? <XCircle className="w-4 h-4 text-rose-500" /> : <Loader2 className="w-4 h-4 text-amber-500" />}
-                <div className="flex-1 min-w-0"><p className="text-sm font-medium text-slate-800">{l.service} · {l.event}</p><p className="text-xs text-slate-500 truncate">{l.details}</p></div>
-                <span className="text-xs text-slate-400">{formatDateTime(l.timestamp)}</span>
+      <div className="rounded-xl border bg-card">
+        <div className="px-4 pt-4 pb-2">
+          <h2 className="text-sm font-semibold">Integration events</h2>
+        </div>
+        {recentLogs.length === 0 ? (
+          <EmptyState compact icon={RefreshCw} title="No events yet" description="Syncs and integration activity appear here." />
+        ) : (
+          <div className="divide-y divide-border">
+            {recentLogs.map((l) => (
+              <div key={l.id} className="flex items-center gap-3 px-4 py-2.5">
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm truncate">
+                    <span className="font-medium">{l.service}</span> — {l.event}
+                  </span>
+                  {l.details && <span className="block text-xs text-muted-foreground truncate">{l.details}</span>}
+                </span>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0 ${statusColor(l.status)}`}>
+                  {l.status}
+                </span>
+                <span className="text-[11px] text-muted-foreground shrink-0">{timeAgo(l.timestamp)}</span>
               </div>
-            ))
-          }
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
