@@ -13,6 +13,7 @@ import {
   Settings,
   Home,
   Upload,
+  Palmtree,
 } from "lucide-react";
 import { useKieData } from "@/lib/useKieData";
 import { daysUntil } from "@/lib/kieUtils";
@@ -107,6 +108,7 @@ export default function Sidebar() {
         <Group label="PORTFOLIO">
           <Item to="/properties" label="Properties" icon={Building2} />
           <Item to="/tenants" label="Tenants" icon={Users} />
+          <Item to="/shortlets" label="Short lets" icon={Palmtree} />
         </Group>
         <Group label="OPERATIONS">
           <Item
