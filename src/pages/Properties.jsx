@@ -130,7 +130,7 @@ export default function Properties() {
           <button
             key={p.id}
             onClick={() => openProperty(p.id)}
-            className="rounded-xl border bg-card p-5 text-left hover:border-[hsl(var(--sage))] hover:shadow-md active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sage))]"
+            className="rounded-xl border border-l-4 border-l-indigo-500 bg-card p-5 text-left hover:border-[hsl(var(--sage))] hover:border-l-indigo-500 hover:shadow-md active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sage))]"
           >
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
@@ -183,7 +183,7 @@ export default function Properties() {
               const s = stats.get(p.id) || EMPTY_STATS;
               return (
                 <tr key={p.id} onClick={() => openProperty(p.id)} className="hover:bg-muted transition-colors cursor-pointer">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-l-[3px] border-l-indigo-500">
                     <Link
                       to={`/properties/${p.id}`}
                       onClick={(e) => e.stopPropagation()}
