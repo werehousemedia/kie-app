@@ -25,6 +25,9 @@ import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import { PageSkeleton } from "@/components/shared/Skeletons";
 import { TenantAvatar } from "@/components/shared/TenantChip";
+import DateRangePicker from "@/components/shared/DateRangePicker";
+import { DateRangeProvider, useDateRange } from "@/lib/DateRangeContext";
+import { inRange, computeDelta } from "@/lib/dateRangePresets";
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -32,6 +35,16 @@ const greeting = () => {
   if (h < 18) return "Good afternoon";
   return "Good evening";
 };
+
+function DeltaBadge({ value }) {
+  if (value == null) return null;
+  const up = value >= 0;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium tabular-nums ${up ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+      {up ? "▲" : "▼"} {Math.abs(value).toFixed(0)}%
+    </span>
+  );
+}
 
 function SectionCard({ title, to, toLabel, children }) {
   return (
@@ -50,11 +63,20 @@ function SectionCard({ title, to, toLabel, children }) {
 }
 
 export default function Overview() {
+  return (
+    <DateRangeProvider>
+      <OverviewContent />
+    </DateRangeProvider>
+  );
+}
+
+function OverviewContent() {
   const navigate = useNavigate();
   const data = useKieData();
+  const { range, compare, compareMode } = useDateRange();
   const {
     properties, tenants, bills, tickets, compliance, conversations,
-    tenancies, equipment, units, shortLets, loading, reload,
+    tenancies, equipment, units, shortLets, transactions, loading, reload,
   } = data;
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState(null);
@@ -105,14 +127,8 @@ export default function Overview() {
     });
     const openTickets = tickets.filter((t) => t.status !== "Complete" && t.status !== "Cancelled");
     const emergencies = openTickets.filter((t) => t.urgency === "emergency").length;
-    const activeTenancies = tenancies.filter((t) => t.status === "Active");
-    const monthlyIncome = activeTenancies.length > 0
-      ? activeTenancies.reduce((s, t) => s + (t.rent_amount || 0), 0)
-      : tenants.reduce((s, t) => s + (t.rent_amount || 0), 0);
-    const monthlyExpenses = bills.filter((b) => {
-      const d = daysUntil(b.due_date);
-      return !b.is_income && b.status !== "Paid" && d != null && d >= -31 && d <= 31;
-    }).reduce((s, b) => s + (b.amount || 0), 0);
+    const monthlyIncome = tenancies.filter((t) => t.status === "Active" || t.status === "Periodic").reduce((s, t) => s + (t.rent_amount || 0), 0)
+      || tenants.reduce((s, t) => s + (t.rent_amount || 0), 0);
     const portfolioValue = properties.reduce((s, p) => s + (p.purchase_value || 0), 0);
     const blendedYield = portfolioValue > 0 && monthlyIncome > 0
       ? ((monthlyIncome * 12) / portfolioValue) * 100
@@ -124,12 +140,40 @@ export default function Overview() {
     const totalUnits = units.length > 0
       ? units.length
       : properties.reduce((s, p) => s + (p.units_count || 1), 0);
+
+    // --- Date-range-filtered figures (the picker drives these) ---
+    const sumIncome = (arr) => arr.filter((r) => r.is_income).reduce((s, r) => s + (r.amount || 0), 0)
+      + arr.filter((r) => !r.is_income && r.category === "Rent").reduce((s, r) => s + (r.amount || 0), 0);
+    const sumExpenses = (arr) => arr.filter((r) => !r.is_income && r.category !== "Rent").reduce((s, r) => s + (r.amount || 0), 0);
+
+    const billsInRange = range ? bills.filter((b) => inRange(b, "Bill", range)) : bills;
+    const txInRange = range ? transactions.filter((t) => inRange(t, "Transaction", range)) : transactions;
+    const incomeInRange = sumIncome(billsInRange) + txInRange.filter((t) => t.type === "Rent received").reduce((s, t) => s + (t.amount || 0), 0);
+    const expensesInRange = sumExpenses(billsInRange) + txInRange.filter((t) => t.type !== "Rent received" && t.type !== "Refund").reduce((s, t) => s + (t.amount || 0), 0);
+    const newJobsInRange = range ? tickets.filter((t) => inRange(t, "MaintenanceTicket", range)) : tickets;
+    const complianceDueInRange = range ? compliance.filter((c) => inRange(c, "ComplianceRecord", range)) : compliance;
+
+    // Comparison window
+    let prevIncome = null, prevExpenses = null, prevNewJobs = null;
+    if (compare) {
+      const billsPrev = bills.filter((b) => inRange(b, "Bill", compare));
+      const txPrev = transactions.filter((t) => inRange(t, "Transaction", compare));
+      prevIncome = sumIncome(billsPrev) + txPrev.filter((t) => t.type === "Rent received").reduce((s, t) => s + (t.amount || 0), 0);
+      prevExpenses = sumExpenses(billsPrev) + txPrev.filter((t) => t.type !== "Rent received" && t.type !== "Refund").reduce((s, t) => s + (t.amount || 0), 0);
+      prevNewJobs = tickets.filter((t) => inRange(t, "MaintenanceTicket", compare));
+    }
+
     return {
       rentDue, overdueRent, upcomingBills, openTickets, emergencies,
-      monthlyIncome, monthlyExpenses, portfolioValue, blendedYield,
+      monthlyIncome, portfolioValue, blendedYield,
       occupiedUnits, totalUnits,
+      incomeInRange, expensesInRange, newJobsInRange, complianceDueInRange,
+      prevIncome, prevExpenses, prevNewJobs,
+      incomeDelta: computeDelta(incomeInRange, prevIncome),
+      expensesDelta: computeDelta(expensesInRange, prevExpenses),
+      newJobsDelta: computeDelta(newJobsInRange.length, prevNewJobs?.length),
     };
-  }, [bills, tickets, tenancies, tenants, properties, units]);
+  }, [bills, tickets, tenancies, tenants, properties, units, transactions, compliance, range, compare]);
 
   const upcomingEvents = useMemo(() => {
     const events = buildPropertyEvents({ propertyId: null, bills, tickets, compliance, equipment, tenancies, tenants, properties, shortLets });
@@ -217,19 +261,22 @@ export default function Overview() {
         title={`${greeting()}, Ed`}
         subtitle={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
         actions={
-          <button
-            onClick={syncNow}
-            disabled={syncing}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
-          >
-            <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "Syncing…" : "Sync"}
-            {!syncing && lastSynced && (
-              <span className="hidden sm:inline text-xs text-muted-foreground font-normal">
-                · {timeAgo(lastSynced)}
-              </span>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <DateRangePicker />
+            <button
+              onClick={syncNow}
+              disabled={syncing}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing…" : "Sync"}
+              {!syncing && lastSynced && (
+                <span className="hidden sm:inline text-xs text-muted-foreground font-normal">
+                  · {timeAgo(lastSynced)}
+                </span>
+              )}
+            </button>
+          </div>
         }
       />
 
@@ -298,10 +345,11 @@ export default function Overview() {
           <p className="text-xs text-muted-foreground mt-0.5">{m.occupiedUnits}/{m.totalUnits} units occupied</p>
         </Link>
         <Link to="/finance?tab=rent" className="rounded-xl border bg-card p-4 hover:bg-muted/60 transition-colors">
-          <p className="text-xs font-medium text-muted-foreground">Monthly income</p>
-          <p className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{formatGBP(m.monthlyIncome)}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {m.blendedYield ? `${m.blendedYield.toFixed(1)}% gross yield` : `${formatGBP(m.rentDue)} rent due`}
+          <p className="text-xs font-medium text-muted-foreground">Income (in range)</p>
+          <p className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{formatGBP(m.incomeInRange)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+            <DeltaBadge value={m.incomeDelta} />
+            {m.blendedYield ? `${m.blendedYield.toFixed(1)}% yield` : `${formatGBP(m.rentDue)} due`}
           </p>
         </Link>
         <Link
@@ -313,9 +361,10 @@ export default function Overview() {
           <p className="text-xs text-muted-foreground mt-0.5">{m.overdueRent > 0 ? "needs chasing" : "nothing overdue"}</p>
         </Link>
         <Link to="/maintenance?status=open" className="rounded-xl border bg-card p-4 hover:bg-muted/60 transition-colors">
-          <p className="text-xs font-medium text-muted-foreground">Open maintenance</p>
-          <p className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{m.openTickets.length}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs font-medium text-muted-foreground">New jobs (in range)</p>
+          <p className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{m.newJobsInRange.length}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+            <DeltaBadge value={m.newJobsDelta} />
             {m.emergencies > 0 ? <span className="text-rose-600 dark:text-rose-400 font-medium">{m.emergencies} emergency</span> : "no emergencies"}
           </p>
         </Link>
@@ -387,18 +436,24 @@ export default function Overview() {
           {/* Money summary */}
           <SectionCard title="Money" to="/finance" toLabel="Finance">
             <div className="px-4 pb-4 space-y-2.5">
-              <Link to="/finance?tab=rent" className="flex items-baseline justify-between hover:opacity-80">
-                <span className="text-sm text-muted-foreground">Monthly income</span>
-                <span className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">+{formatGBP(m.monthlyIncome)}</span>
+              <Link to="/finance?tab=rent" className="flex items-center justify-between hover:opacity-80">
+                <span className="text-sm text-muted-foreground">Income (in range)</span>
+                <span className="flex items-center gap-1.5">
+                  <DeltaBadge value={m.incomeDelta} />
+                  <span className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">+{formatGBP(m.incomeInRange)}</span>
+                </span>
               </Link>
-              <Link to="/finance?tab=bills" className="flex items-baseline justify-between hover:opacity-80">
-                <span className="text-sm text-muted-foreground">Unpaid bills (±31d)</span>
-                <span className="text-sm font-semibold tabular-nums">{formatGBP(m.monthlyExpenses)}</span>
+              <Link to="/finance?tab=bills" className="flex items-center justify-between hover:opacity-80">
+                <span className="text-sm text-muted-foreground">Expenses (in range)</span>
+                <span className="flex items-center gap-1.5">
+                  <DeltaBadge value={m.expensesDelta} />
+                  <span className="text-sm font-semibold tabular-nums">{formatGBP(m.expensesInRange)}</span>
+                </span>
               </Link>
-              <div className="border-t pt-2.5 flex items-baseline justify-between">
+              <div className="border-t pt-2.5 flex items-center justify-between">
                 <span className="text-sm font-medium">Net position</span>
-                <span className={`text-base font-semibold tabular-nums ${m.monthlyIncome - m.monthlyExpenses < 0 ? "text-rose-600 dark:text-rose-400" : ""}`}>
-                  {formatGBP(m.monthlyIncome - m.monthlyExpenses)}
+                <span className={`text-base font-semibold tabular-nums ${m.incomeInRange - m.expensesInRange < 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                  {formatGBP(m.incomeInRange - m.expensesInRange)}
                 </span>
               </div>
               {m.portfolioValue > 0 && (
