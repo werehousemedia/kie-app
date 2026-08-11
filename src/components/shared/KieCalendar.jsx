@@ -284,7 +284,7 @@ export function CompactCalendar({ events, days = 14, maxRows = 8 }) {
   return (
     <div>
       {/* Day strip */}
-      <div className="grid grid-cols-7 sm:grid-cols-14 gap-1 px-4 pb-3">
+      <div className="grid grid-cols-7 sm:grid-cols-[repeat(14,minmax(0,1fr))] gap-1 px-4 pb-3">
         {strip.map((day) => {
           const key = fmtKey(day);
           const dayEvents = byDate.get(key) || [];
