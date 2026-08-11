@@ -47,8 +47,9 @@ function monthsBetween(startStr, endStr) {
 
 export default function TenantProfile() {
   const { id } = useParams();
-  const { tenants, properties, units, tenancies, bills, transactions, compliance, tickets, loading, reload } = useKieData();
+  const { tenants, properties, units, tenancies, bills, transactions, compliance, tickets, rentIncreases, loading, reload } = useKieData();
   const [editOpen, setEditOpen] = useState(false);
+  const [increaseOpen, setIncreaseOpen] = useState(false);
   const [payingId, setPayingId] = useState(null);
 
   const tenant = tenants.find((t) => t.id === id);
@@ -134,7 +135,7 @@ export default function TenantProfile() {
   const endDays = contractEnd ? daysUntil(contractEnd) : null;
   const contractStatus = (() => {
     const neutral = "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300";
-    if (!contractEnd || endDays === null) return { label: "Open-ended", cls: neutral };
+    if (!contractEnd || endDays === null) return { label: "Periodic tenancy", cls: neutral };
     if (endDays < 0) return { label: `Ended ${formatDate(contractEnd)}`, cls: neutral };
     if (endDays <= 60) return { label: `Ends in ${endDays}d`, cls: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" };
     return { label: `Active until ${formatDate(contractEnd)}`, cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" };
@@ -290,6 +291,45 @@ export default function TenantProfile() {
                 </table>
               </div>
             </>
+          )}
+        </div>
+
+        {/* Rent increases — Section 13 / Form 4A notices. Periodic tenancies
+            have no renewal point; rent changes happen through these notices. */}
+        <div className="rounded-xl border bg-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <CalendarClock className="w-4 h-4 text-muted-foreground" /> Rent increases (Section 13)
+            </h2>
+            <button onClick={() => setIncreaseOpen(true)} className="text-xs text-[hsl(var(--sage))] hover:underline font-medium">
+              Log increase
+            </button>
+          </div>
+          {myIncreases.length === 0 ? (
+            <EmptyState
+              compact
+              icon={CalendarClock}
+              title="No rent increase notices"
+              description="Log a Section 13 (Form 4A) notice here — the new rent applies automatically from its effective date."
+            />
+          ) : (
+            <div className="divide-y divide-border">
+              {myIncreases.map((n) => (
+                <div key={n.id} className="py-2.5 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground tabular-nums">
+                      {n.old_amount ? `${formatGBP(n.old_amount)} → ` : ""}{formatGBP(n.new_amount)}/mo
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Served {formatDate(n.notice_date)} · effective {formatDate(n.effective_date)}
+                    </p>
+                  </div>
+                  <span className={`${CHIP} ${n.status === "Effective" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" : n.status === "Disputed" ? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"}`}>
+                    {n.status}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
