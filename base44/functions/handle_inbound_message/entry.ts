@@ -11,11 +11,12 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { runTriage, fallbackReply } from "../../shared/triage.ts";
 import { appendCommsRow } from "../../shared/commsLog.ts";
 import { normalizePhone } from "../../shared/importUtils.ts";
+import { stampEntities, WS_FALLBACK } from "../../shared/workspace.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const db = base44.asServiceRole.entities;
+    let db = base44.asServiceRole.entities;
 
     const user = await base44.auth.me().catch(() => null);
     if (!user) {
@@ -36,6 +37,9 @@ export default async function(req: Request): Promise<Response> {
       ? (tenants.find((t: any) => t.id === tenant_id) || demoTenants[0] || null)
       : tenants.find((t: any) => normalizePhone(t.phone) === normalizePhone(phone)) || null;
     if (!tenant) return Response.json({ error: "Tenant not found." }, { status: 404 });
+
+    // Everything this pipeline creates belongs to the tenant's workspace.
+    db = stampEntities(db, (tenant as any).workspace_id || WS_FALLBACK);
 
     const [properties, equipment, tickets, units] = await Promise.all([
       db.Property.filter({ id: tenant.property_id }),
