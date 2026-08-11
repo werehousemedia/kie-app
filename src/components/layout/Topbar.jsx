@@ -1,43 +1,102 @@
-import React, { useState } from "react";
-import { Search, Bell, Plus, Calendar, Eye, EyeOff } from "lucide-react";
+import React from "react";
+import { Search, Plus, Eye, EyeOff, Moon, Sun, Home } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useDemoFilter } from "@/lib/DemoFilterContext";
+import NotificationCenter from "./NotificationCenter";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-export default function Topbar({ onQuickAdd }) {
-  const [today] = useState(new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }));
+function IconButton({ label, onClick, children }) {
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={onClick}
+            aria-label={label}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            {children}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+export default function Topbar({ onQuickAdd, onOpenPalette }) {
   const { hideDemo, setHideDemo } = useDemoFilter();
+  const { resolvedTheme, setTheme } = useTheme();
+  const today = new Date().toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center gap-4 px-4 sm:px-6">
-      <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search properties, tenants, tickets..."
-          className="w-full pl-10 pr-4 py-2 bg-slate-100 border border-transparent rounded-lg text-sm focus:outline-none focus:bg-white focus:border-slate-300 transition-all"
-        />
+    <header className="sticky top-0 z-30 h-14 bg-background/80 backdrop-blur-md border-b flex items-center gap-2 px-4 sm:px-6">
+      {/* Mobile brand mark — sidebar is hidden below lg */}
+      <div className="lg:hidden flex items-center gap-2 mr-1">
+        <div className="w-8 h-8 rounded-lg bg-[hsl(var(--sage))] flex items-center justify-center">
+          <Home className="w-4.5 h-4.5 w-[18px] h-[18px] text-white" />
+        </div>
+        <span className="font-semibold tracking-tight text-foreground">KIE</span>
       </div>
+
+      {/* Desktop search trigger */}
       <button
-        onClick={() => setHideDemo(!hideDemo)}
-        title={hideDemo ? "Showing real data only — click to reveal demo data" : "Showing all data — click to hide demo records"}
-        className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-colors shrink-0 ${hideDemo ? "bg-[hsl(var(--sage-light))] text-[hsl(var(--sage))]" : "text-slate-500 hover:bg-slate-50"}`}
+        onClick={onOpenPalette}
+        className="hidden md:flex items-center gap-2 w-72 pl-3 pr-2 py-2 bg-muted rounded-lg text-sm text-muted-foreground hover:bg-secondary border border-transparent hover:border-border transition-all"
       >
-        {hideDemo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        <span className="font-medium hidden sm:inline">{hideDemo ? "Demo hidden" : "Demo shown"}</span>
+        <Search className="w-4 h-4" />
+        <span className="flex-1 text-left">Search anything…</span>
+        <kbd className="px-1.5 py-0.5 rounded bg-background border text-[10px] font-medium">
+          ⌘K
+        </kbd>
       </button>
-      <div className="hidden md:flex items-center gap-2 text-sm text-slate-500 px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer">
-        <Calendar className="w-4 h-4" />
-        <span className="font-medium">{today}</span>
-      </div>
-      <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
-        <Bell className="w-5 h-5 text-slate-600" />
-        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+
+      <div className="flex-1" />
+
+      <span className="hidden xl:block text-sm text-muted-foreground font-medium mr-1">
+        {today}
+      </span>
+
+      {/* Mobile search icon */}
+      <button
+        onClick={onOpenPalette}
+        aria-label="Search"
+        className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+      >
+        <Search className="w-5 h-5" />
       </button>
+
+      <IconButton
+        label={hideDemo ? "Demo data hidden — click to show" : "Demo data shown — click to hide"}
+        onClick={() => setHideDemo(!hideDemo)}
+      >
+        {hideDemo ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+      </IconButton>
+
+      <IconButton
+        label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      >
+        {resolvedTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      </IconButton>
+
+      <NotificationCenter />
+
       <button
         onClick={onQuickAdd}
-        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[hsl(var(--navy))] text-white rounded-lg text-sm font-medium hover:bg-[hsl(var(--navy-light))] transition-colors shadow-sm shrink-0"
+        className="flex items-center gap-1.5 pl-3 pr-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity shadow-sm shrink-0 active:scale-[0.98]"
       >
         <Plus className="w-4 h-4" />
-        <span className="hidden sm:inline">Add new</span>
+        <span className="hidden sm:inline">Add</span>
       </button>
     </header>
   );
