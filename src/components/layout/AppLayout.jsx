@@ -6,6 +6,7 @@ import MobileTabBar from "./MobileTabBar";
 import CommandPalette from "./CommandPalette";
 import QuickAddModal from "@/components/shared/QuickAddModal";
 import { DemoFilterProvider } from "@/lib/DemoFilterContext";
+import { DateRangeProvider } from "@/lib/DateRangeContext";
 import DataHealthBanner from "@/components/shared/DataHealthBanner";
 
 export default function AppLayout() {
@@ -25,6 +26,7 @@ export default function AppLayout() {
 
   return (
     <DemoFilterProvider>
+      <DateRangeProvider>
       <div className="min-h-screen bg-background">
         <Sidebar />
         <div className="lg:pl-64 flex flex-col min-h-screen">
@@ -42,6 +44,7 @@ export default function AppLayout() {
         <QuickAddModal open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       </div>
+      </DateRangeProvider>
     </DemoFilterProvider>
   );
 }
