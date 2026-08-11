@@ -46,26 +46,26 @@ export const daysUntil = (dateStr) => {
 
 export const urgencyColor = (urgency) => {
   const map = {
-    emergency: "bg-rose-100 text-rose-700 border-rose-200",
-    high: "bg-amber-100 text-amber-700 border-amber-200",
-    medium: "bg-blue-100 text-blue-700 border-blue-200",
-    low: "bg-slate-100 text-slate-600 border-slate-200",
+    emergency: "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30",
+    high: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
+    medium: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",
+    low: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/15 dark:text-slate-300 dark:border-slate-500/30",
   };
   return map[urgency] || map.low;
 };
 
 export const statusColor = (status) => {
-  if (!status) return "bg-slate-100 text-slate-600";
+  if (!status) return "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300";
   const s = status.toLowerCase();
   if (["complete", "compliant", "paid", "resolved", "available", "occupied"].some((k) => s.includes(k)))
-    return "bg-emerald-100 text-emerald-700";
+    return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300";
   if (["overdue", "failed", "escalated", "void", "missing"].some((k) => s.includes(k)))
-    return "bg-rose-100 text-rose-700";
+    return "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300";
   if (["expiring", "due", "awaiting", "pending", "booked", "limited"].some((k) => s.includes(k)))
-    return "bg-amber-100 text-amber-700";
+    return "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300";
   if (["progress", "active", "triage", "scheduled"].some((k) => s.includes(k)))
-    return "bg-blue-100 text-blue-700";
-  return "bg-slate-100 text-slate-600";
+    return "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300";
+  return "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300";
 };
 
 export const logActivity = async (base44, data) => {
