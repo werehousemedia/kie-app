@@ -58,6 +58,12 @@ export default function TenantProfile() {
     [tenancies, id]
   );
   const currentTenancy = myTenancies.find((ty) => ty.status !== "Ended") || myTenancies[0];
+  const myIncreases = useMemo(
+    () => (rentIncreases || [])
+      .filter((n) => n.tenant_id === id || (currentTenancy && n.tenancy_id === currentTenancy.id))
+      .sort((a, b) => String(b.effective_date || "").localeCompare(String(a.effective_date || ""))),
+    [rentIncreases, id, currentTenancy]
+  );
 
   if (loading) return <PageSkeleton />;
 
@@ -482,7 +488,113 @@ export default function TenantProfile() {
       )}
 
       <EditTenantSheet open={editOpen} onOpenChange={setEditOpen} tenant={tenant} onSaved={reload} />
+      <RentIncreaseDialog
+        open={increaseOpen}
+        onOpenChange={setIncreaseOpen}
+        tenant={tenant}
+        tenancy={currentTenancy}
+        currentRent={currentTenancy?.rent_amount ?? tenant.rent_amount}
+        onSaved={reload}
+      />
     </div>
+  );
+}
+
+// Log a Section 13 (Form 4A) rent increase. If the effective date has already
+// passed, the new rent is applied to the tenancy immediately; otherwise the
+// notice sits as "Served" until its effective date.
+function RentIncreaseDialog({ open, onOpenChange, tenant, tenancy, currentRent, onSaved }) {
+  const [form, setForm] = useState({ notice_date: "", effective_date: "", new_amount: "", form_4a_reference: "" });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) setForm({ notice_date: new Date().toISOString().slice(0, 10), effective_date: "", new_amount: "", form_4a_reference: "" });
+  }, [open]);
+
+  const submit = async () => {
+    const amount = parseFloat(form.new_amount);
+    if (!form.notice_date || !form.effective_date || !Number.isFinite(amount) || amount <= 0) {
+      toast.error("Notice date, effective date and a valid new rent are required");
+      return;
+    }
+    if (!tenancy) {
+      toast.error("No tenancy record to attach this notice to");
+      return;
+    }
+    setSaving(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const effectiveNow = form.effective_date <= today;
+      await base44.entities.RentIncreaseNotice.create({
+        tenancy_id: tenancy.id,
+        tenant_id: tenant.id,
+        property_id: tenant.property_id,
+        notice_date: form.notice_date,
+        effective_date: form.effective_date,
+        old_amount: currentRent || 0,
+        new_amount: amount,
+        form_4a_reference: form.form_4a_reference || "",
+        status: effectiveNow ? "Effective" : "Served",
+        is_demo: !!tenant.is_demo,
+        source: "manual",
+      });
+      if (effectiveNow) {
+        await base44.entities.Tenancy.update(tenancy.id, {
+          rent_amount: amount,
+          rent_history: [...(tenancy.rent_history || []), { date: form.effective_date, amount }],
+        });
+        await base44.entities.Tenant.update(tenant.id, { rent_amount: amount });
+      }
+      await logActivity(base44, {
+        tenant_id: tenant.id,
+        property_id: tenant.property_id,
+        event_type: "Rent reminder",
+        description: `Section 13 notice: rent ${formatGBP(currentRent || 0)} → ${formatGBP(amount)} effective ${formatDate(form.effective_date)}`,
+      });
+      toast.success(effectiveNow ? "Rent increase applied" : "Section 13 notice logged");
+      onSaved();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(`Couldn't log increase${e?.message ? `: ${e.message}` : ""}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Log rent increase (Section 13)</SheetTitle>
+        </SheetHeader>
+        <div className="space-y-4 py-4">
+          <p className="text-xs text-muted-foreground">
+            Current rent: <span className="font-semibold text-foreground">{formatGBP(currentRent || 0)}/mo</span>.
+            Periodic tenancies have no renewal date — rent changes via a Form 4A notice with at least two months' notice.
+          </p>
+          <div className="space-y-1.5">
+            <Label className={LABEL_CLS}>Form 4A notice served on</Label>
+            <Input type="date" value={form.notice_date} onChange={(e) => setForm({ ...form, notice_date: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className={LABEL_CLS}>New rent takes effect</Label>
+            <Input type="date" value={form.effective_date} onChange={(e) => setForm({ ...form, effective_date: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className={LABEL_CLS}>New monthly rent (£)</Label>
+            <Input type="number" min="0" inputMode="decimal" value={form.new_amount} onChange={(e) => setForm({ ...form, new_amount: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className={LABEL_CLS}>Form 4A reference (optional)</Label>
+            <Input value={form.form_4a_reference} onChange={(e) => setForm({ ...form, form_4a_reference: e.target.value })} placeholder="e.g. scan URL or file ref" />
+          </div>
+          <div className="flex gap-2 justify-end pt-2">
+            <button onClick={() => onOpenChange(false)} className={BTN_SECONDARY} disabled={saving}>Cancel</button>
+            <button onClick={submit} className={BTN_PRIMARY} disabled={saving}>{saving ? "Saving…" : "Log notice"}</button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
