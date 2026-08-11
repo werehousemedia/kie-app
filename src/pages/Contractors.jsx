@@ -174,7 +174,7 @@ export default function Contractors() {
                 setOpenId(c.id);
                 setSearchParams((p) => { p.set("contractor", c.id); return p; }, { replace: true });
               }}
-              className="rounded-xl border bg-card p-4 text-left hover:bg-muted/60 active:scale-[0.99] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              className="rounded-xl border border-l-4 border-l-orange-500 bg-card p-4 text-left hover:bg-muted/60 active:scale-[0.99] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
