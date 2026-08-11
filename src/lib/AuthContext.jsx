@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { base44, setWorkspaceId } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [workspace, setWorkspace] = useState(null); // { id, role } from workspace_bootstrap
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
   useEffect(() => {
@@ -94,6 +95,19 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+      // Ensure the user has a workspace BEFORE any page fetches data — RLS
+      // scopes every read/write to it, and created records get stamped with it.
+      try {
+        const res = await base44.functions.invoke('workspace_bootstrap', {});
+        const ws = res?.data || {};
+        setWorkspaceId(ws.workspace_id || currentUser.workspace_id || null);
+        setWorkspace(ws.workspace_id ? { id: ws.workspace_id, role: ws.role || 'owner' } : null);
+      } catch {
+        // Bootstrap failing must not lock the user out — fall back to any
+        // workspace already on the user record.
+        setWorkspaceId(currentUser.workspace_id || null);
+        setWorkspace(currentUser.workspace_id ? { id: currentUser.workspace_id, role: currentUser.workspace_role || 'owner' } : null);
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
@@ -135,6 +149,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ 
       user, 
+      workspace,
       isAuthenticated, 
       isLoadingAuth,
       isLoadingPublicSettings,
