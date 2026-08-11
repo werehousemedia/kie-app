@@ -23,13 +23,14 @@ const DEMO_FILTERED = [
   "properties", "units", "tenants", "equipment", "conversations",
   "messages", "triages", "tickets", "compliance", "bills",
   "transactions", "activity", "tenancies", "shortLets",
+  "tasks", "rentIncreases", "prsRegistrations",
 ];
 
 const EMPTY = {
   properties: [], units: [], tenants: [], equipment: [], conversations: [],
   messages: [], triages: [], tickets: [], contractors: [], compliance: [],
   bills: [], transactions: [], activity: [], integrationLogs: [], tenancies: [],
-  shortLets: [],
+  shortLets: [], tasks: [], rentIncreases: [], prsRegistrations: [],
 };
 
 const SOURCES = {
@@ -49,6 +50,9 @@ const SOURCES = {
   integrationLogs: () => base44.entities.IntegrationLog.list("-timestamp", 100),
   tenancies: () => base44.entities.Tenancy.list(),
   shortLets: () => base44.entities.ShortLetBooking.list("-check_in", 200),
+  tasks: () => base44.entities.Task.list("-created_date", 500),
+  rentIncreases: () => base44.entities.RentIncreaseNotice.list(),
+  prsRegistrations: () => base44.entities.PRSRegistration.list(),
 };
 
 const TTL_MS = 30_000;
