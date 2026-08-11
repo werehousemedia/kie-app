@@ -11,15 +11,21 @@ import {
   ExternalLink,
   Moon,
   Eye,
+  Users,
+  ShieldCheck,
+  XCircle,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { useKieData } from "@/lib/useKieData";
 import { timeAgo, statusColor } from "@/lib/kieUtils";
 import { useDemoFilter } from "@/lib/DemoFilterContext";
 import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function Card({ icon: Icon, title, chip, chipTone = "muted", children, action }) {
   const chipClass =
@@ -44,6 +50,114 @@ function Card({ icon: Icon, title, chip, chipTone = "muted", children, action })
       <div className="text-xs text-muted-foreground space-y-1.5">{children}</div>
       {action && <div className="mt-3">{action}</div>}
     </div>
+  );
+}
+
+// Workspace sharing: who can see this portfolio. Invited emails join THIS
+// workspace on their next sign-in; everyone else who registers gets their own
+// empty workspace and can never see this one (row-level security).
+function WorkspaceAccessCard() {
+  const { user, workspace } = useAuth();
+  const [invites, setInvites] = useState([]);
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("editor");
+  const [busy, setBusy] = useState(false);
+  const canManage = workspace?.role === "owner" || user?.role === "admin";
+
+  const loadInvites = () =>
+    base44.entities.WorkspaceInvite.list("-created_date", 50).then(setInvites).catch(() => {});
+  useEffect(() => { loadInvites(); }, []);
+
+  const sendInvite = async () => {
+    const e = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+    setBusy(true);
+    try {
+      await base44.entities.WorkspaceInvite.create({
+        email: e,
+        role,
+        status: "pending",
+        invited_by: user?.email || "",
+      });
+      toast.success(`${e} will join this workspace when they next sign in`);
+      setEmail("");
+      loadInvites();
+    } catch (err) {
+      toast.error(`Couldn't invite: ${err?.message || "unknown error"}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const revoke = async (inv) => {
+    try {
+      await base44.entities.WorkspaceInvite.update(inv.id, { status: "revoked" });
+      toast.success(`Invite for ${inv.email} revoked`);
+      loadInvites();
+    } catch (err) {
+      toast.error(`Couldn't revoke: ${err?.message || "unknown error"}`);
+    }
+  };
+
+  return (
+    <Card
+      icon={Users}
+      title="Workspace access"
+      chip={workspace ? (workspace.id === "ws_kie_main" ? "KIE portfolio" : "Your workspace") : "…"}
+      chipTone="good"
+    >
+      <p className="flex items-start gap-1.5">
+        <ShieldCheck className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        Every account only ever sees its own workspace's data. People you invite here join THIS
+        workspace; anyone else who signs up starts with an empty portfolio of their own.
+      </p>
+      {invites.length > 0 && (
+        <div className="rounded-lg border divide-y divide-border mt-2">
+          {invites.filter((i) => i.status !== "revoked").map((inv) => (
+            <div key={inv.id} className="flex items-center gap-2 px-2.5 py-2">
+              <span className="flex-1 min-w-0 truncate text-foreground">{inv.email}</span>
+              <span className="text-[10px] uppercase font-medium text-muted-foreground">{inv.role}</span>
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${inv.status === "accepted" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"}`}>
+                {inv.status}
+              </span>
+              {canManage && inv.status === "pending" && (
+                <button onClick={() => revoke(inv)} aria-label={`Revoke invite for ${inv.email}`} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-rose-600">
+                  <XCircle className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {canManage && (
+        <div className="flex gap-1.5 pt-2">
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@example.com"
+            className="h-8 text-xs"
+          />
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="h-8 w-[90px] text-xs shrink-0"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="editor">Editor</SelectItem>
+              <SelectItem value="viewer">Viewer</SelectItem>
+            </SelectContent>
+          </Select>
+          <button
+            onClick={sendInvite}
+            disabled={busy}
+            className="px-3 h-8 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 disabled:opacity-60 shrink-0"
+          >
+            {busy ? "…" : "Invite"}
+          </button>
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -205,6 +319,8 @@ export default function Integrations() {
             hide them to see only your real portfolio.
           </p>
         </div>
+
+        <WorkspaceAccessCard />
       </div>
 
       <div className="rounded-xl border bg-card">
