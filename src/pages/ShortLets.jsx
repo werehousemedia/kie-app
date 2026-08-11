@@ -16,6 +16,7 @@ import {
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
 import { formatGBP, formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
+import { runTaskEngine } from "@/lib/taskUtils";
 import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import { PageSkeleton } from "@/components/shared/Skeletons";
@@ -114,6 +115,7 @@ export default function ShortLets() {
         description: `Turnaround clean ${cleaner ? `booked with ${cleaner.name}` : "created (no cleaner on file)"} for ${formatDate(booking.check_out)}`,
         related_id: ticket.id,
       });
+      runTaskEngine({ refresh: !silent }); // surface the matching Task immediately
       if (!silent) {
         toast.success(cleaner ? `Clean booked with ${cleaner.name} for ${formatDate(booking.check_out)}` : "Clean created — assign a cleaner in Maintenance");
         reload();
