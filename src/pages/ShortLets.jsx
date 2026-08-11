@@ -14,7 +14,11 @@ import {
   MoonStar,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { format, addDays } from "date-fns";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip } from "recharts";
 import { useKieData } from "@/lib/useKieData";
+import { useDateRange } from "@/lib/DateRangeContext";
+import DateRangePicker from "@/components/shared/DateRangePicker";
 import { formatGBP, formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
 import { runTaskEngine } from "@/lib/taskUtils";
 import PageHeader from "@/components/shared/PageHeader";
@@ -60,11 +64,14 @@ let autoBookRan = false;
 
 export default function ShortLets() {
   const { shortLets, properties, contractors, tickets, reload, loading } = useKieData();
+  const { range, label: rangeLabel } = useDateRange();
   const [searchParams, setSearchParams] = useSearchParams();
   const [addOpen, setAddOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [bookingCleanId, setBookingCleanId] = useState(null);
   const [autoBooked, setAutoBooked] = useState(0);
+  const [occScope, setOccScope] = useState("portfolio");
+  const [listMode, setListMode] = useState("upcoming");
 
   useEffect(() => {
     if (searchParams.get("new") === "1") {
@@ -209,23 +216,65 @@ export default function ShortLets() {
   const checkInsToday = upcoming.filter((b) => b.check_in?.slice(0, 10) === today);
   const checkOutsToday = upcoming.filter((b) => b.check_out?.slice(0, 10) === today);
 
+  // Selected range as yyyy-MM-dd bounds. Nights window is [start, end+1).
+  const rangeYMD = useMemo(() => {
+    if (!range?.start || !range?.end) return null;
+    return {
+      s: format(range.start, "yyyy-MM-dd"),
+      e: format(range.end, "yyyy-MM-dd"),
+      nightEnd: format(addDays(range.end, 1), "yyyy-MM-dd"),
+    };
+  }, [range]);
+
+  // Nights of a stay that fall inside the selected range.
+  const nightsInRange = (b) => {
+    if (!rangeYMD || !b.check_in || !b.check_out) return 0;
+    const from = b.check_in.slice(0, 10) > rangeYMD.s ? b.check_in.slice(0, 10) : rangeYMD.s;
+    const to = b.check_out.slice(0, 10) < rangeYMD.nightEnd ? b.check_out.slice(0, 10) : rangeYMD.nightEnd;
+    return Math.max(0, nightsBetween(from, to));
+  };
+
   const stats = useMemo(() => {
-    const month = today.slice(0, 7);
-    const payoutThisMonth = live
-      .filter((b) => (b.check_in || "").slice(0, 7) === month)
+    // Range-driven money + nights (the picker drives these two).
+    const payoutInRange = live
+      .filter((b) => rangeYMD && (b.check_in || "").slice(0, 10) >= rangeYMD.s && (b.check_in || "").slice(0, 10) <= rangeYMD.e)
       .reduce((s, b) => s + (b.total_payout || 0), 0);
-    const next30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-    const nightsNext30 = live.reduce((s, b) => {
-      if (!b.check_in || !b.check_out) return s;
-      const from = b.check_in.slice(0, 10) > today ? b.check_in.slice(0, 10) : today;
-      const to = b.check_out.slice(0, 10) < next30 ? b.check_out.slice(0, 10) : next30;
-      return s + Math.max(0, nightsBetween(from, to));
-    }, 0);
+    const nightsInRangeTotal = live.reduce((s, b) => s + nightsInRange(b), 0);
     const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     const checkinsNext7 = upcoming.filter((b) => b.check_in >= today && b.check_in <= in7).length;
     const needClean = upcoming.filter((b) => !b.cleaning_ticket_id).length;
-    return { payoutThisMonth, nightsNext30, checkinsNext7, needClean };
-  }, [live, upcoming, today]);
+    return { payoutInRange, nightsInRangeTotal, checkinsNext7, needClean };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, upcoming, today, rangeYMD]);
+
+  // Occupancy: % of available nights booked in the selected range, for one
+  // short-let property or the whole short-let portfolio.
+  const occupancy = useMemo(() => {
+    const slProps = properties.filter((p) => p.is_short_let);
+    const scopeProps = occScope === "portfolio" ? slProps : slProps.filter((p) => p.id === occScope);
+    if (!rangeYMD || scopeProps.length === 0) return null;
+    const rangeNights = nightsBetween(rangeYMD.s, rangeYMD.nightEnd);
+    const totalNights = rangeNights * scopeProps.length;
+    const scopeIds = new Set(scopeProps.map((p) => p.id));
+    const bookedNights = live
+      .filter((b) => scopeIds.has(b.property_id))
+      .reduce((s, b) => s + nightsInRange(b), 0);
+    const booked = Math.min(bookedNights, totalNights);
+    const vacant = Math.max(0, totalNights - booked);
+    const pct = totalNights > 0 ? Math.round((booked / totalNights) * 100) : 0;
+    return { booked, vacant, totalNights, pct, propCount: scopeProps.length };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, properties, occScope, rangeYMD]);
+
+  // Bookings overlapping the selected range (for the "In range" list mode).
+  const inRangeBookings = useMemo(
+    () =>
+      [...live]
+        .filter((b) => nightsInRange(b) > 0)
+        .sort((a, b) => a.check_in.localeCompare(b.check_in)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [live, rangeYMD]
+  );
 
   // Gap nights: short windows between consecutive bookings per property.
   const gaps = useMemo(() => {
