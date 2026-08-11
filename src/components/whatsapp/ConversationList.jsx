@@ -1,126 +1,96 @@
-import React, { useMemo, useState } from "react";
-import { Search, MessageSquare, X, TestTube } from "lucide-react";
-import { urgencyColor, timeAgo } from "@/lib/kieUtils";
+import React from "react";
+import { Search, MessageSquare } from "lucide-react";
 import { TenantAvatar } from "@/components/shared/TenantChip";
 import EmptyState from "@/components/shared/EmptyState";
+import { timeAgo } from "@/lib/kieUtils";
 
-// Left rail: searchable conversation list, sorted by recency. Rendered inside
-// a width/border wrapper owned by the page (full-width pane on mobile, w-80 on lg+).
-export default function ConversationList({ conversations, tenants, properties, selectedId, onSelect, onTest }) {
-  const [query, setQuery] = useState("");
+const URGENCY_DOT = {
+  emergency: "bg-rose-500",
+  high: "bg-amber-500",
+  medium: "bg-blue-500",
+  low: "bg-muted-foreground/40",
+};
 
-  const rows = useMemo(() => {
-    const withMeta = [...conversations]
-      .sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0))
-      .map((c) => ({
-        conv: c,
-        tenant: tenants.find((t) => t.id === c.tenant_id),
-        property: properties.find((p) => p.id === c.property_id),
-      }));
-    const q = query.trim().toLowerCase();
-    if (!q) return withMeta;
-    return withMeta.filter(({ conv, tenant, property }) =>
-      [tenant?.name, property?.name, conv.last_message].some((s) => s && s.toLowerCase().includes(q))
-    );
-  }, [conversations, tenants, properties, query]);
-
+// Left rail: searchable conversation list, sorted by the page (most recent
+// first). Whole surface is keyboard/touch friendly.
+export default function ConversationList({
+  conversations,
+  tenants,
+  properties,
+  selectedId,
+  onSelect,
+  search,
+  onSearch,
+}) {
   return (
-    <div className="h-full flex flex-col bg-card">
-      <div className="p-4 border-b shrink-0">
-        <div className="flex items-center gap-2 mb-3">
-          <MessageSquare className="w-4 h-4 text-[hsl(var(--sage))]" />
-          <h2 className="text-sm font-semibold text-foreground">Conversations</h2>
-        </div>
+    <div className="flex flex-col h-full min-h-0">
+      <div className="p-3 border-b">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search tenant, property, message…"
-            aria-label="Search conversations"
-            className="w-full pl-9 pr-8 py-2 bg-muted rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--sage))]/40"
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder="Search conversations…"
+            className="w-full pl-9 pr-3 py-2 bg-muted rounded-lg text-sm border border-transparent focus:outline-none focus:bg-card focus:border-border transition-all"
           />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-secondary transition-colors"
-            >
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          )}
         </div>
       </div>
-
-      <div className="flex-1 overflow-y-auto divide-y divide-border">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {conversations.length === 0 ? (
           <EmptyState
+            compact
             icon={MessageSquare}
-            title="No conversations yet"
-            description="Send a test message to watch the AI pipeline handle it end to end."
-            compact
-            action={
-              onTest && (
-                <button
-                  onClick={onTest}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
-                >
-                  <TestTube className="w-4 h-4" /> Test a message
-                </button>
-              )
-            }
-          />
-        ) : rows.length === 0 ? (
-          <EmptyState
-            icon={Search}
-            title="Nothing matches"
-            description={`No conversations match "${query}".`}
-            compact
-            action={
-              <button
-                onClick={() => setQuery("")}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 border bg-card hover:bg-muted text-foreground rounded-lg text-sm font-medium active:scale-[0.98] transition-all"
-              >
-                Clear search
-              </button>
+            title={search ? "No matches" : "No conversations yet"}
+            description={
+              search
+                ? "Try a different name or property."
+                : "Tenant WhatsApp messages arrive here. Use “Test message” to try the AI pipeline."
             }
           />
         ) : (
-          rows.map(({ conv: c, tenant, property }) => {
-            const isSelected = c.id === selectedId;
+          conversations.map((c) => {
+            const tenant = tenants.find((t) => t.id === c.tenant_id);
+            const property = properties.find((p) => p.id === c.property_id);
+            const active = c.id === selectedId;
             return (
               <button
                 key={c.id}
                 onClick={() => onSelect(c.id)}
-                aria-current={isSelected ? "true" : undefined}
-                className={`w-full text-left flex items-start gap-3 px-4 py-3 min-h-[56px] transition-colors ${
-                  isSelected ? "bg-muted" : "hover:bg-muted"
+                className={`w-full flex items-start gap-3 px-3 py-3 text-left transition-colors border-b border-border/60 ${
+                  active ? "bg-[hsl(var(--sage-light))]" : "hover:bg-muted"
                 }`}
               >
-                <TenantAvatar tenant={tenant} size="md" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground truncate">{tenant?.name || "Unknown tenant"}</p>
-                    <span className="text-[11px] text-muted-foreground shrink-0">{timeAgo(c.last_message_at)}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">{property?.name || "No property"}</p>
-                  <div className="flex items-center justify-between gap-2 mt-0.5">
-                    <p className="text-xs text-muted-foreground truncate flex-1">{c.last_message || "No messages yet"}</p>
-                    <span className="flex items-center gap-1.5 shrink-0">
-                      {c.unread_count > 0 && (
-                        <span className="bg-[hsl(var(--sage))] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                          {c.unread_count}
-                        </span>
-                      )}
-                      {(c.urgency === "high" || c.urgency === "emergency") && (
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${urgencyColor(c.urgency)}`}>
-                          {c.urgency}
-                        </span>
-                      )}
-                    </span>
-                  </div>
+                <div className="relative shrink-0 mt-0.5">
+                  <TenantAvatar tenant={tenant} size="md" />
+                  {c.urgency && (
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-card ${URGENCY_DOT[c.urgency] || URGENCY_DOT.low}`}
+                    />
+                  )}
                 </div>
+                <span className="flex-1 min-w-0">
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm font-medium truncate">
+                      {tenant?.name || "Unknown tenant"}
+                    </span>
+                    <span className="ml-auto text-[11px] text-muted-foreground shrink-0">
+                      {timeAgo(c.last_message_at)}
+                    </span>
+                  </span>
+                  <span className="block text-xs text-muted-foreground truncate mt-0.5">
+                    {c.last_message || "—"}
+                  </span>
+                  <span className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[11px] text-muted-foreground truncate">
+                      {property?.name || ""}
+                    </span>
+                    {(c.unread_count || 0) > 0 && (
+                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-[hsl(var(--sage))] text-white text-[10px] font-bold flex items-center justify-center tabular-nums">
+                        {c.unread_count}
+                      </span>
+                    )}
+                  </span>
+                </span>
               </button>
             );
           })
