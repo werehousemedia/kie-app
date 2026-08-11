@@ -248,7 +248,9 @@ export default function Tenants() {
   );
 }
 
-const EMPTY_FORM = { name: "", phone: "", email: "", property_id: "", tenancy_start: "", tenancy_end: "", rent_amount: "", consent_status: "Pending" };
+// No tenancy-end field: since 1 May 2026 every new UK tenancy is periodic —
+// there is no fixed end date to record (Renters' Rights Act 2025).
+const EMPTY_FORM = { name: "", phone: "", email: "", property_id: "", tenancy_start: "", rent_amount: "", consent_status: "Pending" };
 
 function AddTenantModal({ open, onClose, onCreated, properties }) {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -263,7 +265,7 @@ function AddTenantModal({ open, onClose, onCreated, properties }) {
       const rent = Number.isFinite(rentN) ? rentN : 0;
       const t = await base44.entities.Tenant.create({
         name: form.name, phone: form.phone, email: form.email, property_id: form.property_id,
-        tenancy_start: form.tenancy_start, tenancy_end: form.tenancy_end,
+        tenancy_start: form.tenancy_start,
         rent_amount: rent, payment_status: "Due", consent_status: form.consent_status, notes: "",
       });
       // Every tenant gets a Tenancy record — it drives rent/residence history
@@ -271,9 +273,9 @@ function AddTenantModal({ open, onClose, onCreated, properties }) {
       const start = form.tenancy_start || today;
       await base44.entities.Tenancy.create({
         tenant_id: t.id, property_id: form.property_id,
-        start_date: form.tenancy_start || null, end_date: form.tenancy_end || null,
+        start_date: form.tenancy_start || null, end_date: null,
         rent_amount: rent || 0,
-        status: start > today ? "Upcoming" : "Active",
+        status: start > today ? "Upcoming" : "Periodic",
         rent_history: [{ date: start, amount: rent || 0 }],
         is_demo: false, source: "manual",
       });
@@ -310,8 +312,11 @@ function AddTenantModal({ open, onClose, onCreated, properties }) {
               </Select>
             )}
           </div>
-          <div className="space-y-1.5"><Label className={LABEL_CLS}>Tenancy start</Label><Input type="date" value={form.tenancy_start} onChange={(e) => setForm({ ...form, tenancy_start: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label className={LABEL_CLS}>Tenancy end</Label><Input type="date" value={form.tenancy_end} onChange={(e) => setForm({ ...form, tenancy_end: e.target.value })} /></div>
+          <div className="space-y-1.5">
+            <Label className={LABEL_CLS}>Tenancy start</Label>
+            <Input type="date" value={form.tenancy_start} onChange={(e) => setForm({ ...form, tenancy_start: e.target.value })} />
+            <p className="text-[11px] text-muted-foreground">New tenancies are periodic — no end date (Renters' Rights Act).</p>
+          </div>
           <div className="space-y-1.5"><Label className={LABEL_CLS}>Monthly rent (£)</Label><Input type="number" min="0" inputMode="decimal" value={form.rent_amount} onChange={(e) => setForm({ ...form, rent_amount: e.target.value })} /></div>
           <div className="space-y-1.5">
             <Label className={LABEL_CLS}>Consent status</Label>
