@@ -441,7 +441,7 @@ export default function ShortLets() {
                   const nights = nightsBetween(b.check_in, b.check_out);
                   const inProgress = b.check_in?.slice(0, 10) <= today && b.check_out?.slice(0, 10) > today;
                   return (
-                    <div key={b.id} className="flex items-center gap-3 px-4 py-3">
+                    <div key={b.id} className="flex items-center gap-3 px-4 py-3 border-l-[3px] border-l-pink-500">
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0 ${PLATFORM_CHIP[b.platform] || PLATFORM_CHIP.Other}`}>
                         {b.platform || "Other"}
                       </span>
