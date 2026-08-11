@@ -29,7 +29,8 @@ export default async function (req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     const db = base44.asServiceRole.entities;
 
-    const force = new URL(req.url).searchParams.get("force") === "1";
+    const body = await req.json().catch(() => ({} as Rec));
+    const force = new URL(req.url).searchParams.get("force") === "1" || body?.force === 1 || body?.force === "1" || body?.force === true;
     const settings: Rec[] = await db.AppSetting.filter({ key: "task_engine_last_run" });
     const lastRunSetting = settings[0];
     if (
