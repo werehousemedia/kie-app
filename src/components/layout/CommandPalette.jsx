@@ -190,6 +190,50 @@ export default function CommandPalette({ open, onOpenChange }) {
             );
           })}
         </CommandGroup>
+        {overdueResults.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Overdue — longest first">
+              {overdueResults.map((r, i) => {
+                const meta = kindMeta(r.kind);
+                return (
+                  <CommandItem
+                    key={`ov_${i}`}
+                    value={`overdue ${meta.label} ${r.label}`}
+                    onSelect={() => go(r.to)}
+                  >
+                    <span className={`w-2 h-2 rounded-full mr-2 shrink-0 ${meta.dot}`} />
+                    <span className="truncate flex-1">{r.label}</span>
+                    <span className="ml-2 text-xs font-semibold text-rose-600 dark:text-rose-400 tabular-nums shrink-0">{r.days}d</span>
+                    <span className={`ml-2 hidden sm:inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-medium shrink-0 ${meta.chip}`}>{meta.label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </>
+        )}
+        {expiringResults.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Expiring soon — soonest first">
+              {expiringResults.map((r, i) => {
+                const meta = kindMeta(r.kind);
+                return (
+                  <CommandItem
+                    key={`ex_${i}`}
+                    value={`expiring soon ${meta.label} ${r.label}`}
+                    onSelect={() => go(r.to)}
+                  >
+                    <span className={`w-2 h-2 rounded-full mr-2 shrink-0 ${meta.dot}`} />
+                    <span className="truncate flex-1">{r.label}</span>
+                    <span className="ml-2 text-xs font-semibold text-amber-600 dark:text-amber-400 tabular-nums shrink-0">{r.days}d</span>
+                    <span className={`ml-2 hidden sm:inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-medium shrink-0 ${meta.chip}`}>{meta.label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </>
+        )}
         {properties.length > 0 && (
           <>
             <CommandSeparator />
@@ -200,7 +244,7 @@ export default function CommandPalette({ open, onOpenChange }) {
                   value={`property ${p.name} ${p.address || ""} ${p.postcode || ""}`}
                   onSelect={() => go(`/properties/${p.id}`)}
                 >
-                  <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <Building2 className="w-4 h-4 mr-2 text-indigo-500" />
                   <span className="truncate">{p.name}</span>
                   <span className="ml-2 text-xs text-muted-foreground truncate">
                     {p.address}
@@ -220,7 +264,7 @@ export default function CommandPalette({ open, onOpenChange }) {
                   value={`tenant ${t.name} ${t.phone || ""} ${t.email || ""}`}
                   onSelect={() => go(`/tenants/${t.id}`)}
                 >
-                  <Users className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <Users className="w-4 h-4 mr-2 text-cyan-500" />
                   {t.name}
                 </CommandItem>
               ))}
@@ -237,7 +281,7 @@ export default function CommandPalette({ open, onOpenChange }) {
                   value={`ticket ${t.description || ""} ${t.issue_type || ""}`}
                   onSelect={() => go(`/maintenance?ticket=${t.id}`)}
                 >
-                  <Wrench className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <Wrench className="w-4 h-4 mr-2 text-blue-500" />
                   <span className="truncate">
                     {(t.description || "Maintenance job").slice(0, 60)}
                   </span>
@@ -256,7 +300,7 @@ export default function CommandPalette({ open, onOpenChange }) {
                   value={`contractor ${c.name} ${c.trade || ""}`}
                   onSelect={() => go(`/contractors?contractor=${c.id}`)}
                 >
-                  <HardHat className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <HardHat className="w-4 h-4 mr-2 text-orange-500" />
                   {c.name}
                   <span className="ml-2 text-xs text-muted-foreground">{c.trade}</span>
                 </CommandItem>
@@ -277,7 +321,7 @@ export default function CommandPalette({ open, onOpenChange }) {
                     value={`conversation ${tenant.name}`}
                     onSelect={() => go(`/whatsapp?conversation=${c.id}`)}
                   >
-                    <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <MessageSquare className="w-4 h-4 mr-2 text-lime-500" />
                     {tenant.name}
                     {(c.unread_count || 0) > 0 && (
                       <span className="ml-2 text-xs font-semibold text-[hsl(var(--sage))]">
