@@ -26,6 +26,7 @@ import EmptyState from "@/components/shared/EmptyState";
 import { PageSkeleton } from "@/components/shared/Skeletons";
 import { TenantAvatar } from "@/components/shared/TenantChip";
 import DateRangePicker from "@/components/shared/DateRangePicker";
+import { CompactCalendar } from "@/components/shared/KieCalendar";
 import { useDateRange } from "@/lib/DateRangeContext";
 import { inRange, computeDelta } from "@/lib/dateRangePresets";
 
@@ -169,12 +170,10 @@ export default function Overview() {
     };
   }, [bills, tickets, tenancies, tenants, properties, units, transactions, compliance, range, compare]);
 
-  const upcomingEvents = useMemo(() => {
-    const events = buildPropertyEvents({ propertyId: null, bills, tickets, compliance, equipment, tenancies, tenants, properties, shortLets });
-    const today = new Date().toISOString().slice(0, 10);
-    const end = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-    return events.filter((e) => e.date >= today && e.date <= end).slice(0, 8);
-  }, [bills, tickets, compliance, equipment, tenancies, tenants, properties, shortLets]);
+  const allEvents = useMemo(
+    () => buildPropertyEvents({ propertyId: null, bills, tickets, compliance, equipment, tenancies, tenants, properties, shortLets, tasks: data.tasks }),
+    [bills, tickets, compliance, equipment, tenancies, tenants, properties, shortLets, data.tasks]
+  );
 
   const attention = useMemo(() => {
     const items = [];
@@ -405,24 +404,9 @@ export default function Overview() {
             </div>
           </SectionCard>
 
-          {/* Coming up */}
-          <SectionCard title="Coming up — next 14 days">
-            {upcomingEvents.length === 0 ? (
-              <EmptyState compact icon={CalendarDays} title="Nothing due in the next two weeks" description="Rent, bills, services and compliance dates will appear here." />
-            ) : (
-              <div className="divide-y divide-border">
-                {upcomingEvents.map((e) => (
-                  <Link key={e.id} to={e.to} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted transition-colors">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${KIND_META[e.kind]?.dot || "bg-muted-foreground"}`} />
-                    <span className="flex-1 min-w-0">
-                      <span className="block text-sm truncate">{e.label}</span>
-                      {e.sub && <span className="block text-xs text-muted-foreground truncate">{e.sub}</span>}
-                    </span>
-                    <span className="text-xs text-muted-foreground tabular-nums shrink-0">{formatDate(e.date)}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
+          {/* Coming up — compact 14-day calendar, full version lives at /calendar */}
+          <SectionCard title="Coming up — next 14 days" to="/calendar" toLabel="Full calendar">
+            <CompactCalendar events={allEvents} />
           </SectionCard>
         </div>
 
