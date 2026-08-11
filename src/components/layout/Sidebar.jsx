@@ -14,6 +14,8 @@ import {
   Home,
   Upload,
   Palmtree,
+  CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 import { useKieData } from "@/lib/useKieData";
 import { daysUntil } from "@/lib/kieUtils";
@@ -69,9 +71,13 @@ function Group({ label, children }) {
 // Desktop-only navigation (hidden below lg — MobileTabBar takes over).
 // Brand navy in both themes: the app's anchor surface.
 export default function Sidebar() {
-  const { conversations, tickets, compliance } = useKieData();
+  const { conversations, tickets, compliance, tasks } = useKieData();
 
   const unread = conversations.reduce((n, c) => n + (c.unread_count || 0), 0);
+  const openTasks = tasks.filter((t) => t.status !== "Done").length;
+  const urgentTasks = tasks.filter(
+    (t) => t.status !== "Done" && (t.urgency === "high" || t.urgency === "emergency")
+  ).length;
   const openTickets = tickets.filter(
     (t) => t.status !== "Complete" && t.status !== "Cancelled"
   ).length;
@@ -104,6 +110,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 pb-4 overflow-y-auto">
         <div className="space-y-0.5">
           <Item to="/" label="Overview" icon={LayoutDashboard} end />
+          <Item to="/calendar" label="Calendar" icon={CalendarDays} />
         </div>
         <Group label="PORTFOLIO">
           <Item to="/properties" label="Properties" icon={Building2} />
@@ -117,6 +124,13 @@ export default function Sidebar() {
             icon={MessageSquare}
             badge={unread}
             badgeTone="critical"
+          />
+          <Item
+            to="/tasks"
+            label="Open Tasks"
+            icon={ClipboardList}
+            badge={openTasks}
+            badgeTone={urgentTasks > 0 ? "critical" : "default"}
           />
           <Item
             to="/maintenance"
