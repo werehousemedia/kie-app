@@ -18,6 +18,8 @@ import {
   Sun,
   Eye,
   Palmtree,
+  CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -33,6 +35,8 @@ import { useDemoFilter } from "@/lib/DemoFilterContext";
 
 const PAGES = [
   { label: "Overview", to: "/", icon: LayoutDashboard },
+  { label: "Calendar", to: "/calendar", icon: CalendarDays },
+  { label: "Open Tasks", to: "/tasks", icon: ClipboardList },
   { label: "Properties", to: "/properties", icon: Building2 },
   { label: "Tenants", to: "/tenants", icon: Users },
   { label: "Short lets", to: "/shortlets", icon: Palmtree },
