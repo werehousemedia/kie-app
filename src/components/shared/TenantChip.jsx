@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 const SIZES = {
@@ -19,11 +19,21 @@ export function tenantInitials(name) {
 
 export function TenantAvatar({ tenant, size = "sm" }) {
   const s = SIZES[size] || SIZES.sm;
-  if (tenant?.photo_url) {
-    return <img src={tenant.photo_url} alt={tenant.name} className={`${s.avatar} rounded-full object-cover shrink-0`} />;
+  const [broken, setBroken] = useState(false);
+  if (tenant?.photo_url && !broken) {
+    return (
+      <img
+        src={tenant.photo_url}
+        alt={tenant.name}
+        onError={() => setBroken(true)}
+        className={`${s.avatar} rounded-full object-cover shrink-0`}
+      />
+    );
   }
   return (
-    <span className={`${s.avatar} rounded-full bg-[hsl(var(--navy))] text-white flex items-center justify-center font-semibold shrink-0`}>
+    <span
+      className={`${s.avatar} rounded-full bg-[hsl(var(--navy))] dark:bg-[hsl(var(--sage))] text-white flex items-center justify-center font-semibold shrink-0`}
+    >
       {tenantInitials(tenant?.name)}
     </span>
   );
@@ -32,16 +42,16 @@ export function TenantAvatar({ tenant, size = "sm" }) {
 // Uniform clickable reference to a tenant: avatar + name linking to the
 // tenant profile. Null-safe.
 export default function TenantChip({ tenant, size = "sm", className = "" }) {
-  if (!tenant) return <span className="text-slate-400">—</span>;
+  if (!tenant) return <span className="text-muted-foreground">—</span>;
   const s = SIZES[size] || SIZES.sm;
   return (
     <Link
       to={`/tenants/${tenant.id}`}
       onClick={(e) => e.stopPropagation()}
-      className={`inline-flex items-center gap-1.5 hover:underline decoration-[hsl(var(--sage))] decoration-2 underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sage))] rounded ${className}`}
+      className={`inline-flex items-center gap-1.5 max-w-full hover:underline decoration-[hsl(var(--sage))] decoration-2 underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] rounded ${className}`}
     >
       <TenantAvatar tenant={tenant} size={size} />
-      <span className={`${s.text} font-medium text-slate-800`}>{tenant.name}</span>
+      <span className={`${s.text} font-medium text-foreground truncate`}>{tenant.name}</span>
     </Link>
   );
 }
