@@ -44,7 +44,7 @@
       "items": {
         "type": "object"
       },
-      "description": "[{date: 'YYYY-MM-DD', amount: number}] \u2014 appended when rent changes"
+      "description": "[{date: 'YYYY-MM-DD', amount: number}] — appended when rent changes"
     },
     "notes": {
       "type": "string"
@@ -56,6 +56,10 @@
     "source": {
       "type": "string",
       "default": "manual"
+    },
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this record belongs to. Row-level security scopes reads and writes to the user's workspace."
     }
   },
   "required": [

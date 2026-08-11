@@ -51,6 +51,10 @@
     "created_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this record belongs to. Row-level security scopes reads and writes to the user's workspace."
     }
   },
   "required": [

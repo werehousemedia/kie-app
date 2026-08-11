@@ -30,7 +30,7 @@
         "Leasehold",
         "Commonhold"
       ],
-      "description": "Ownership tenure \u2014 required for PRS Database registration."
+      "description": "Ownership tenure — required for PRS Database registration."
     },
     "hmo_status": {
       "type": "string",
@@ -67,7 +67,7 @@
     "is_short_let": {
       "type": "boolean",
       "default": false,
-      "description": "Listed on Airbnb/Booking.com \u2014 enables short-let automations. App-owned, never synced from sheet."
+      "description": "Listed on Airbnb/Booking.com — enables short-let automations. App-owned, never synced from sheet."
     },
     "cleaning_contractor_id": {
       "type": "string",
@@ -91,6 +91,10 @@
     "source": {
       "type": "string",
       "default": "manual"
+    },
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this record belongs to. Row-level security scopes reads and writes to the user's workspace."
     }
   },
   "required": [

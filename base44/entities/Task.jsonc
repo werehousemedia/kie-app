@@ -18,7 +18,7 @@
         "General"
       ],
       "default": "General",
-      "description": "What kind of work this is \u2014 drives the kind-of-thing colour taxonomy."
+      "description": "What kind of work this is — drives the kind-of-thing colour taxonomy."
     },
     "urgency": {
       "type": "string",
@@ -49,11 +49,11 @@
     },
     "tenant_id": {
       "type": "string",
-      "description": "Reference to Tenant (optional \u2014 relevant for rent/enquiry tasks)."
+      "description": "Reference to Tenant (optional — relevant for rent/enquiry tasks)."
     },
     "contractor_id": {
       "type": "string",
-      "description": "Reference to Contractor (optional \u2014 set when a contractor is booked)."
+      "description": "Reference to Contractor (optional — set when a contractor is booked)."
     },
     "source": {
       "type": "string",
@@ -88,6 +88,10 @@
     "is_demo": {
       "type": "boolean",
       "default": false
+    },
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this record belongs to. Row-level security scopes reads and writes to the user's workspace."
     }
   },
   "required": [
