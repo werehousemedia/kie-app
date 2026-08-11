@@ -23,6 +23,15 @@
         "Commercial"
       ]
     },
+    "tenure": {
+      "type": "string",
+      "enum": [
+        "Freehold",
+        "Leasehold",
+        "Commonhold"
+      ],
+      "description": "Ownership tenure \u2014 required for PRS Database registration."
+    },
     "hmo_status": {
       "type": "string",
       "enum": [
