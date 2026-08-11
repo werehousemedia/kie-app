@@ -2,19 +2,18 @@ import React, { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  ClipboardList, HardHat, Star, ChevronRight, RefreshCw, CheckCircle2,
+  ClipboardList, HardHat, ChevronRight, RefreshCw, CheckCircle2,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
 import { formatDate, daysUntil, urgencyColor, logActivity } from "@/lib/kieUtils";
-import { rankContractors, TASK_STATUSES, TASK_CATEGORIES, runTaskEngine } from "@/lib/taskUtils";
+import { TASK_STATUSES, TASK_CATEGORIES, runTaskEngine } from "@/lib/taskUtils";
 import { kindMeta, taskKind } from "@/lib/kindTaxonomy";
 import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
+import BookContractorDialog from "@/components/shared/BookContractorDialog";
 import { ListSkeleton } from "@/components/shared/Skeletons";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // Status pill: status colour channel (open amber-ish neutral, in progress blue,
