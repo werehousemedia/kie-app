@@ -103,7 +103,9 @@ export default function Maintenance() {
       if (status === "open") {
         if (t.status === "Complete" || t.status === "Cancelled") return false;
       } else if (status !== "all" && t.status !== status) return false;
-      if (urgency !== "all" && t.urgency !== urgency) return false;
+      if (urgency === "urgent") {
+        if (t.urgency !== "high" && t.urgency !== "emergency") return false;
+      } else if (urgency !== "all" && t.urgency !== urgency) return false;
       if (q) {
         const prop = properties.find((p) => p.id === t.property_id);
         const tenant = tenants.find((x) => x.id === t.tenant_id);
@@ -288,6 +290,7 @@ export default function Maintenance() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Any urgency</SelectItem>
+              <SelectItem value="urgent">Urgent (high + emergency)</SelectItem>
               {URGENCIES.map((u) => (
                 <SelectItem key={u} value={u} className="capitalize">{u}</SelectItem>
               ))}
