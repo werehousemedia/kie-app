@@ -10,11 +10,12 @@ const KIND_META = {
   warranty: { label: "Warranty", dot: "bg-amber-500" },
   compliance: { label: "Compliance", dot: "bg-rose-500" },
   tenancy: { label: "Tenancy", dot: "bg-[hsl(var(--navy))]" },
+  booking: { label: "Short let", dot: "bg-violet-500" },
 };
 
 export { KIND_META };
 
-export function buildPropertyEvents({ propertyId, bills = [], tickets = [], compliance = [], equipment = [], tenancies = [], tenants = [], properties = [] }) {
+export function buildPropertyEvents({ propertyId, bills = [], tickets = [], compliance = [], equipment = [], tenancies = [], tenants = [], properties = [], shortLets = [] }) {
   const events = [];
   const forProp = (list) => (propertyId ? list.filter((x) => x.property_id === propertyId) : list);
   const propName = (id) => properties.find((p) => p.id === id)?.name;
@@ -109,6 +110,33 @@ export function buildPropertyEvents({ propertyId, bills = [], tickets = [], comp
         sub: propName(ty.property_id),
         to: tenant ? `/tenants/${tenant.id}` : "/tenants",
         sourceId: ty.id,
+      });
+    }
+  }
+
+  for (const b of forProp(shortLets)) {
+    if (b.status === "Cancelled") continue;
+    const guest = b.guest_name || "Guest";
+    if (b.check_in) {
+      events.push({
+        id: `booking_in_${b.id}`,
+        date: b.check_in.slice(0, 10),
+        kind: "booking",
+        label: `${guest} checks in (${b.platform || "Short let"})`,
+        sub: propName(b.property_id),
+        to: "/shortlets",
+        sourceId: b.id,
+      });
+    }
+    if (b.check_out) {
+      events.push({
+        id: `booking_out_${b.id}`,
+        date: b.check_out.slice(0, 10),
+        kind: "booking",
+        label: `${guest} checks out — turnaround clean${b.cleaning_ticket_id ? " booked" : " NEEDED"}`,
+        sub: propName(b.property_id),
+        to: "/shortlets",
+        sourceId: b.id,
       });
     }
   }
