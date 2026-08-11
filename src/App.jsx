@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "next-themes"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -105,6 +106,9 @@ function App() {
             <AuthenticatedApp />
           </Router>
           <Toaster />
+          {/* Pages toast via sonner — its Toaster was never mounted, so every
+              success/error confirmation in the app was silently invisible. */}
+          <SonnerToaster position="top-right" richColors closeButton />
         </QueryClientProvider>
       </AuthProvider>
     </ThemeProvider>
