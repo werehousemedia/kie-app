@@ -339,7 +339,7 @@ export default function Maintenance() {
                   setOpenTicketId(t.id);
                   setSearchParams((p) => { p.set("ticket", t.id); return p; }, { replace: true });
                 }}
-                className="rounded-xl border bg-card p-4 text-left hover:bg-muted/60 active:scale-[0.99] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                className="rounded-xl border border-l-4 border-l-blue-500 bg-card p-4 text-left hover:bg-muted/60 active:scale-[0.99] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               >
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${urgencyColor(t.urgency)}`}>
