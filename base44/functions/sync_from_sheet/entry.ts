@@ -4,6 +4,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { runImport } from "../../shared/importCore.ts";
 import { fetchSheetTabs } from "../../shared/sheetFetch.ts";
+import { stampEntities, WS_FALLBACK } from "../../shared/workspace.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -31,7 +32,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const results = await runImport(
-      base44.asServiceRole.entities,
+      stampEntities(base44.asServiceRole.entities, (template as any).workspace_id || WS_FALLBACK),
       fetched.tabs,
       { tabMappings: template.tab_mappings },
       { preview: false },
