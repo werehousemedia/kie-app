@@ -1,0 +1,77 @@
+{
+  "name": "ShortLetBooking",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "Airbnb",
+        "Booking.com",
+        "Direct",
+        "Other"
+      ],
+      "default": "Airbnb"
+    },
+    "guest_name": {
+      "type": "string"
+    },
+    "guests_count": {
+      "type": "number"
+    },
+    "check_in": {
+      "type": "string",
+      "format": "date"
+    },
+    "check_out": {
+      "type": "string",
+      "format": "date"
+    },
+    "nightly_rate": {
+      "type": "number"
+    },
+    "total_payout": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Confirmed",
+        "Checked in",
+        "Checked out",
+        "Cleaned",
+        "Cancelled"
+      ],
+      "default": "Confirmed"
+    },
+    "cleaning_ticket_id": {
+      "type": "string",
+      "description": "MaintenanceTicket booked for the post-checkout turnaround clean"
+    },
+    "external_id": {
+      "type": "string",
+      "description": "iCal UID for imported bookings \u2014 dedupe key"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
+    }
+  },
+  "required": [
+    "property_id",
+    "check_in",
+    "check_out"
+  ]
+}
