@@ -10,6 +10,7 @@
 //   wa_app_secret       — optional; enables X-Hub-Signature-256 validation
 // Always answers POSTs with 200 quickly — Meta disables webhooks that error.
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { stampEntities, WS_FALLBACK } from "../../shared/workspace.ts";
 
 const PIPELINE_URL = "https://kie-app.base44.app/functions/handle_inbound_message";
 const GRAPH_VERSION = "v21.0";
