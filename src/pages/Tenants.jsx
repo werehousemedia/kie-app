@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useKieData } from "@/lib/useKieData";
 import { base44 } from "@/api/base44Client";
-import { formatGBP, formatDate, statusColor, logActivity } from "@/lib/kieUtils";
-import { Search, Plus, MessageSquare, Users, AlertTriangle } from "lucide-react";
+import { formatGBP, formatDate, statusColor, logActivity, daysUntil, waMeLink, gmailComposeLink } from "@/lib/kieUtils";
+import { Search, Plus, MessageSquare, Users, AlertTriangle, Mail, Phone } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { TenantAvatar } from "@/components/shared/TenantChip";
 import PropertyLink from "@/components/shared/PropertyLink";
@@ -24,8 +24,51 @@ const consentChip = (status) =>
     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
     : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300";
 
+// External contact actions: WhatsApp via wa.me, email via Gmail compose.
+// Both open in a new tab; the MessageSquare icon stays the in-app inbox.
+function ContactIcons({ tenant, size = "w-4 h-4" }) {
+  const wa = waMeLink(tenant.phone);
+  const gmail = gmailComposeLink(tenant.email);
+  return (
+    <span className="inline-flex items-center" onClick={(e) => e.stopPropagation()}>
+    {wa && (
+        <a
+          href={wa}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`WhatsApp ${tenant.name} on ${tenant.phone}`}
+          title="Open WhatsApp chat"
+          className="p-1.5 rounded-lg hover:bg-muted inline-block active:scale-[0.98] transition-all"
+        >
+          <Phone className={`${size} text-emerald-600 dark:text-emerald-400`} />
+        </a>
+      )}
+      {gmail && (
+        <a
+          href={gmail}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Email ${tenant.name} via Gmail`}
+          title="Compose in Gmail"
+          className="p-1.5 rounded-lg hover:bg-muted inline-block active:scale-[0.98] transition-all"
+        >
+          <Mail className={`${size} text-muted-foreground`} />
+        </a>
+      )}
+      <Link
+        to={`/whatsapp?tenant=${tenant.id}`}
+        aria-label={`Open inbox conversation with ${tenant.name}`}
+        title="Open in-app inbox"
+        className="p-1.5 rounded-lg hover:bg-muted inline-block active:scale-[0.98] transition-all"
+      >
+        <MessageSquare className={`${size} text-muted-foreground`} />
+      </Link>
+    </span>
+  );
+}
+
 export default function Tenants() {
-  const { tenants, properties, reload, loading } = useKieData();
+  const { tenants, properties, bills, reload, loading } = useKieData();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -47,6 +90,17 @@ export default function Tenants() {
   if (loading) return <PageSkeleton />;
 
   const propertyOf = (t) => properties.find((p) => p.id === t.property_id);
+
+  // Days the earliest overdue rent bill for this tenant's property has been
+  // outstanding — shown beside the red badge, matching Compliance's style.
+  const rentOverdueDays = (t) => {
+    if (t.payment_status !== "Overdue") return null;
+    const bill = bills
+      .filter((b) => b.category === "Rent" && b.status === "Overdue" && b.property_id === t.property_id)
+      .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)))[0];
+    const d = bill ? daysUntil(bill.due_date) : null;
+    return d != null && d < 0 ? Math.abs(d) : null;
+  };
 
   return (
     <div className="space-y-5 animate-fade-in">
