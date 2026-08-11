@@ -279,7 +279,7 @@ export default function Finance() {
                   const d = daysUntil(b.due_date);
                   const dueHint = d == null ? null : d < 0 ? `${Math.abs(d)}d overdue` : d === 0 ? "due today" : `in ${d}d`;
                   return (
-                    <div key={b.id} className="flex items-center gap-3 px-4 py-3 min-h-[56px] hover:bg-muted transition-colors">
+                    <div key={b.id} className="flex items-center gap-3 px-4 py-3 min-h-[56px] hover:bg-muted transition-colors border-l-[3px] border-l-teal-500">
                       <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
                         {b.is_income
                           ? <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -366,7 +366,7 @@ export default function Finance() {
                 <tbody className="divide-y divide-border">
                   {contractorTx.map((t) => (
                     <tr key={t.id} className="hover:bg-muted transition-colors">
-                      <td className="px-4 py-3 text-foreground whitespace-nowrap">{formatDate(t.date)}</td>
+                      <td className="px-4 py-3 text-foreground whitespace-nowrap border-l-[3px] border-l-teal-500">{formatDate(t.date)}</td>
                       <td className="px-4 py-3 text-muted-foreground"><PropertyLink property={properties.find((p) => p.id === t.property_id)} /></td>
                       <td className="px-4 py-3 text-right font-medium tabular-nums text-foreground">{formatGBP(t.amount)}</td>
                       <td className="px-4 py-3"><span className={CHIP + statusColor(t.status)}>{t.status}</span></td>
@@ -395,7 +395,7 @@ export default function Finance() {
                 {sortedTx.map((t) => {
                   const income = isIncomeTx(t);
                   return (
-                    <div key={t.id} className="flex items-center gap-3 px-4 py-3 min-h-[56px]">
+                    <div key={t.id} className="flex items-center gap-3 px-4 py-3 min-h-[56px] border-l-[3px] border-l-teal-500">
                       <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
                         {income
                           ? <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -433,7 +433,7 @@ export default function Finance() {
                       const income = isIncomeTx(t);
                       return (
                         <tr key={t.id} className="hover:bg-muted transition-colors">
-                          <td className="px-4 py-3 text-foreground whitespace-nowrap">{formatDate(t.date)}</td>
+                          <td className="px-4 py-3 text-foreground whitespace-nowrap border-l-[3px] border-l-teal-500">{formatDate(t.date)}</td>
                           <td className="px-4 py-3 text-foreground">{t.type || "—"}</td>
                           <td className="px-4 py-3 text-muted-foreground"><PropertyLink property={properties.find((p) => p.id === t.property_id)} /></td>
                           <td className={`px-4 py-3 text-right font-medium tabular-nums ${income ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
@@ -518,7 +518,7 @@ function BillTable({ bills, properties, onMarkPaid, onReminder, showReminder, pe
           const prop = properties.find((p) => p.id === b.property_id);
           const pending = pendingIds.has(b.id);
           return (
-            <div key={b.id} className="px-4 py-3 space-y-2.5">
+            <div key={b.id} className="px-4 py-3 space-y-2.5 border-l-[3px] border-l-teal-500">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{b.category}</p>
@@ -555,7 +555,7 @@ function BillTable({ bills, properties, onMarkPaid, onReminder, showReminder, pe
               const pending = pendingIds.has(b.id);
               return (
                 <tr key={b.id} className="hover:bg-muted transition-colors">
-                  <td className="px-4 py-3 font-medium text-foreground">{b.category}</td>
+                  <td className="px-4 py-3 font-medium text-foreground border-l-[3px] border-l-teal-500">{b.category}</td>
                   <td className="px-4 py-3 text-muted-foreground"><PropertyLink property={properties.find((p) => p.id === b.property_id)} /></td>
                   <td className={`px-4 py-3 whitespace-nowrap ${b.status === "Overdue" ? "text-rose-600 dark:text-rose-400 font-medium" : "text-muted-foreground"}`}>{formatDate(b.due_date)}</td>
                   <td className={`px-4 py-3 text-right font-medium tabular-nums ${b.is_income ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
