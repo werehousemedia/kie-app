@@ -1,0 +1,60 @@
+{
+  "name": "PRSRegistration",
+  "type": "object",
+  "properties": {
+    "property_id": {
+      "type": "string",
+      "description": "Reference to the Property this registration covers."
+    },
+    "registration_number": {
+      "type": "string",
+      "description": "PRS / landlord registration reference number."
+    },
+    "scheme_name": {
+      "type": "string",
+      "enum": [
+        "The Property Ombudsman",
+        "Property Redress Scheme",
+        "PRS Scotland",
+        "Rent Smart Wales",
+        "Other"
+      ]
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Expiring soon",
+        "Expired",
+        "Missing"
+      ],
+      "default": "Active"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the registration certificate/document."
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
+    }
+  },
+  "required": [
+    "property_id"
+  ]
+}

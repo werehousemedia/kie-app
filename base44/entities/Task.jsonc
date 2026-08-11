@@ -1,0 +1,81 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "emergency"
+      ],
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "to_do",
+        "in_progress",
+        "awaiting_action",
+        "complete",
+        "deferred"
+      ],
+      "default": "to_do"
+    },
+    "related_type": {
+      "type": "string",
+      "enum": [
+        "compliance",
+        "maintenance",
+        "rent",
+        "enquiry",
+        "contractor",
+        "changeover"
+      ]
+    },
+    "related_id": {
+      "type": "string",
+      "description": "ID of the source record this task resolves into (e.g. MaintenanceTicket id)."
+    },
+    "property_id": {
+      "type": "string",
+      "description": "Reference to Property."
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Reference to Tenant (optional \u2014 relevant for rent/enquiry tasks)."
+    },
+    "contractor_id": {
+      "type": "string",
+      "description": "Reference to Contractor (optional \u2014 relevant for maintenance tasks)."
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
+    }
+  },
+  "required": [
+    "title",
+    "related_type",
+    "property_id"
+  ]
+}

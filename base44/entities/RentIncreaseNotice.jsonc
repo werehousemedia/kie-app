@@ -1,0 +1,68 @@
+{
+  "name": "RentIncreaseNotice",
+  "type": "object",
+  "properties": {
+    "tenancy_id": {
+      "type": "string",
+      "description": "Reference to the Tenancy this notice applies to."
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Reference to the Tenant (denormalised for quick lookup)."
+    },
+    "property_id": {
+      "type": "string",
+      "description": "Reference to the Property (denormalised for quick lookup)."
+    },
+    "notice_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the Form 4A (Section 13) notice was served."
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the new rent amount takes effect."
+    },
+    "old_amount": {
+      "type": "number",
+      "description": "Rent amount before the increase (GBP)."
+    },
+    "new_amount": {
+      "type": "number",
+      "description": "New rent amount after the increase (GBP)."
+    },
+    "form_4a_reference": {
+      "type": "string",
+      "description": "Reference or URL for the served Form 4A notice."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Served",
+        "Effective",
+        "Disputed",
+        "Withdrawn"
+      ],
+      "default": "Draft"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
+    }
+  },
+  "required": [
+    "tenancy_id",
+    "notice_date",
+    "effective_date",
+    "new_amount"
+  ]
+}
