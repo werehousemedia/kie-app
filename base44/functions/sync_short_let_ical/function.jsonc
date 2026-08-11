@@ -1,0 +1,14 @@
+{
+  "name": "sync_short_let_ical",
+  "entry": "entry.ts",
+  "automations": [
+    {
+      "type": "scheduled",
+      "name": "nightly_short_let_ical_sync",
+      "description": "Pull Airbnb / Booking.com reservations from each short-let property's iCal feeds every night",
+      "schedule_mode": "recurring",
+      "schedule_type": "cron",
+      "cron_expression": "0 4 * * *"
+    }
+  ]
+}
