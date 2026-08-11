@@ -338,7 +338,7 @@ export default function Compliance() {
             {filtered.map((r) => {
               const d = daysUntil(r.expiry_date);
               return (
-                <div key={r.id} className="px-4 py-3">
+                <div key={r.id} className="px-4 py-3 border-l-[3px] border-l-violet-500">
                   <div className="flex items-center gap-2">
                     <span className="flex-1 min-w-0 text-sm font-medium truncate">{r.category}</span>
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0 ${statusColor(r.computed)}`}>
@@ -397,7 +397,7 @@ export default function Compliance() {
                     const d = daysUntil(r.expiry_date);
                     return (
                       <tr key={r.id} className="hover:bg-muted/50">
-                        <td className="px-4 py-2.5 font-medium">{r.category}</td>
+                        <td className="px-4 py-2.5 font-medium border-l-[3px] border-l-violet-500">{r.category}</td>
                         <td className="px-4 py-2.5">
                           <PropertyLink property={properties.find((p) => p.id === r.property_id)} />
                         </td>
