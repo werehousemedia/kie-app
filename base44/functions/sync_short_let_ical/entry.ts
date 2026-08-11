@@ -5,6 +5,7 @@
 // Auth: an authenticated app user OR an X-Sync-Secret header matching the
 // default ImportTemplate's sync_secret (same convention as sync_from_sheet).
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { WS_FALLBACK } from "../../shared/workspace.ts";
 
 type ParsedEvent = {
   uid: string;
@@ -60,6 +61,8 @@ export default async function (req: Request): Promise<Response> {
 
     const entities = base44.asServiceRole.entities;
     const properties = await entities.Property.list();
+    const wsOf = (pid: string) =>
+      (properties.find((p: any) => p.id === pid) as any)?.workspace_id || WS_FALLBACK;
     const feeds: { propertyId: string; platform: string; url: string }[] = [];
     for (const p of properties) {
       if (!p.is_short_let) continue;
@@ -98,6 +101,7 @@ export default async function (req: Request): Promise<Response> {
             ? ev.summary.slice(0, 80)
             : null;
         await entities.ShortLetBooking.create({
+          workspace_id: wsOf(feed.propertyId),
           property_id: feed.propertyId,
           platform: feed.platform,
           guest_name: guest,
@@ -114,6 +118,7 @@ export default async function (req: Request): Promise<Response> {
     }
 
     await entities.IntegrationLog.create({
+      workspace_id: WS_FALLBACK,
       service: "KIE Lettings",
       event: "Short-let iCal sync",
       status: errors.length && created === 0 ? "failed" : "success",
