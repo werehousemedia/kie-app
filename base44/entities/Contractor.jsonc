@@ -23,6 +23,13 @@
     "services": {
       "type": "string"
     },
+    "accreditations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Professional accreditations, e.g. Gas Safe, NICEIC, DEA, TrustMark. Drives contractor ranking for compliance jobs."
+    },
     "coverage_area": {
       "type": "string"
     },
