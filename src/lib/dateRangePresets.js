@@ -20,6 +20,7 @@ export const PRESETS = [
   { id: "last90",       label: "Last 90 days",   range: () => ({ start: day(subDays(now(), 89)), end: endOfDay(now()) }) },
   { id: "thisMonth",    label: "This month",     range: () => ({ start: startOfMonth(now()), end: endOfMonth(now()) }) },
   { id: "lastMonth",    label: "Last month",     range: () => ({ start: startOfMonth(subMonths(now(), 1)), end: endOfMonth(subMonths(now(), 1)) }) },
+  { id: "nextMonth",    label: "Next month",     range: () => ({ start: startOfMonth(addMonths(now(), 1)), end: endOfMonth(addMonths(now(), 1)) }) },
   { id: "next30",       label: "Next 30 days",   range: () => ({ start: day(now()), end: endOfDay(addDays(now(), 29)) }) },
   { id: "next3Months",  label: "Next 3 months",  range: () => ({ start: day(now()), end: endOfDay(addDays(now(), 89)) }) },
   { id: "next12Months", label: "Next 12 months", range: () => ({ start: day(now()), end: endOfDay(addMonths(day(now()), 12)) }) },
@@ -81,6 +82,9 @@ const DATE_FIELDS = {
   IntegrationLog: "timestamp",
   Tenancy: "start_date",
   ShortLetBooking: "check_in",
+  Task: "due_date",
+  RentIncreaseNotice: "effective_date",
+  PRSRegistration: "expiry_date",
 };
 
 export function getRecordDate(record, entityName) {
