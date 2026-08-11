@@ -2,6 +2,7 @@
 // conversation's latest tenant message + triage to the communications log.
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { appendCommsRow } from "../../shared/commsLog.ts";
+import { stampEntities, WS_FALLBACK } from "../../shared/workspace.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
