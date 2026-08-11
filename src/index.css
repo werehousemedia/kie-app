@@ -4,50 +4,95 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* Neutral canvas, tinted toward the brand navy — never cream. */
+    --background: 220 24% 97%;
+    --foreground: 222 47% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 47% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 222 47% 11%;
+    --popover-foreground: 222 47% 9%;
+    --primary: 222 47% 12%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 160 43% 46%;
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 222 47% 12%;
+    --muted: 220 20% 94%;
+    --muted-foreground: 220 12% 40%;
+    /* Sage — deepened so white-on-accent passes contrast. */
+    --accent: 161 51% 30%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 160 43% 46%;
+    --border: 220 18% 89%;
+    --input: 220 18% 85%;
+    --ring: 161 51% 30%;
     --navy: 222 47% 11%;
     --navy-light: 222 40% 18%;
-    --sage: 160 43% 46%;
+    --sage: 161 51% 30%;
     --sage-light: 160 43% 92%;
-    --teal: 190 70% 40%;
-    --amber: 38 92% 50%;
-    --rose: 350 80% 60%;
-    --chart-1: 160 43% 46%;
-    --chart-2: 190 70% 40%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 222 47% 30%;
-    --chart-5: 350 80% 60%;
-    --radius: 0.625rem;
-    --font-heading: ui-sans-serif, system-ui, sans-serif;
-    --font-body: ui-sans-serif, system-ui, sans-serif;
-    --font-display: ui-sans-serif, system-ui, sans-serif;
+    --teal: 190 70% 34%;
+    --amber: 35 92% 44%;
+    --rose: 350 72% 46%;
+    --chart-1: 161 51% 36%;
+    --chart-2: 190 70% 38%;
+    --chart-3: 35 92% 50%;
+    --chart-4: 222 47% 35%;
+    --chart-5: 350 72% 55%;
+    --radius: 0.75rem;
+    --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 90%;
+    /* Sidebar is brand navy in BOTH themes — the app's anchor surface. */
+    --sidebar-background: 222 47% 10%;
+    --sidebar-foreground: 214 28% 88%;
     --sidebar-primary: 160 43% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 40% 18%;
+    --sidebar-accent: 222 36% 16%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 40% 20%;
+    --sidebar-border: 222 32% 18%;
     --sidebar-ring: 160 43% 46%;
+  }
+
+  .dark {
+    --background: 222 30% 7%;
+    --foreground: 214 28% 92%;
+    --card: 222 26% 10%;
+    --card-foreground: 214 28% 92%;
+    --popover: 222 26% 10%;
+    --popover-foreground: 214 28% 92%;
+    --primary: 214 28% 92%;
+    --primary-foreground: 222 47% 10%;
+    --secondary: 222 22% 15%;
+    --secondary-foreground: 214 28% 92%;
+    --muted: 222 22% 15%;
+    --muted-foreground: 218 14% 66%;
+    --accent: 160 45% 42%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 66% 54%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 222 20% 19%;
+    --input: 222 20% 24%;
+    --ring: 160 45% 48%;
+    --navy: 222 40% 14%;
+    --navy-light: 222 34% 20%;
+    --sage: 160 45% 48%;
+    --sage-light: 160 40% 16%;
+    --teal: 190 60% 45%;
+    --amber: 35 90% 55%;
+    --rose: 350 75% 60%;
+    --chart-1: 160 45% 48%;
+    --chart-2: 190 60% 50%;
+    --chart-3: 35 90% 55%;
+    --chart-4: 214 40% 65%;
+    --chart-5: 350 75% 62%;
+    --sidebar-background: 222 34% 8%;
+    --sidebar-foreground: 214 28% 88%;
+    --sidebar-primary: 160 45% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 28% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 26% 15%;
+    --sidebar-ring: 160 45% 48%;
   }
 }
 
@@ -55,28 +100,53 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body antialiased;
+    font-feature-settings: 'cv11', 'ss01';
   }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: hsl(214 32% 85%); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: hsl(214 32% 78%); }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+  h1, h2, h3 { text-wrap: balance; }
 }
 
 @layer utilities {
-  .glass-card {
-    background: hsl(0 0% 100% / 0.7);
-    backdrop-filter: blur(12px);
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .navy-gradient {
-    background: linear-gradient(135deg, hsl(222 47% 11%), hsl(222 40% 18%));
+    background: linear-gradient(135deg, hsl(var(--navy)), hsl(var(--navy-light)));
   }
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: kieFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  @keyframes fadeIn {
+  .animate-slide-up {
+    animation: kieSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes kieFadeIn {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes kieSlideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
