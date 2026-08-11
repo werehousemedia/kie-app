@@ -5,6 +5,7 @@ import { FileSpreadsheet, Megaphone, FlaskConical, Play } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
 import { logActivity, matchContractors } from "@/lib/kieUtils";
+import { runTaskEngine } from "@/lib/taskUtils";
 import PageHeader from "@/components/shared/PageHeader";
 import { PageSkeleton } from "@/components/shared/Skeletons";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
