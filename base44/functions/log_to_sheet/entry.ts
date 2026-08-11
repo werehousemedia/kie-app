@@ -12,7 +12,7 @@ export default async function(req: Request): Promise<Response> {
     const { conversation_id } = await req.json();
     if (!conversation_id) return Response.json({ error: "conversation_id required" }, { status: 400 });
 
-    const db = base44.asServiceRole.entities;
+    const db = stampEntities(base44.asServiceRole.entities, WS_FALLBACK);
     const [convs, messages, triages] = await Promise.all([
       db.Conversation.filter({ id: conversation_id }),
       db.Message.filter({ conversation_id }),
