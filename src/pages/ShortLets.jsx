@@ -319,6 +319,7 @@ export default function ShortLets() {
         subtitle="Airbnb & Booking.com operations — bookings, turnarounds, gap nights"
         actions={
           <>
+            <DateRangePicker />
             <button
               onClick={syncCalendars}
               disabled={syncing}
@@ -340,12 +341,12 @@ export default function ShortLets() {
       {/* KPI tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="rounded-xl border bg-card p-4">
-          <p className="text-xs font-medium text-muted-foreground">Payout this month</p>
-          <p className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{formatGBP(stats.payoutThisMonth)}</p>
+          <p className="text-xs font-medium text-muted-foreground truncate" title={rangeLabel}>Payout · {rangeLabel}</p>
+          <p className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{formatGBP(stats.payoutInRange)}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
-          <p className="text-xs font-medium text-muted-foreground">Nights booked · 30d</p>
-          <p className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{stats.nightsNext30}</p>
+          <p className="text-xs font-medium text-muted-foreground truncate" title={rangeLabel}>Nights booked · {rangeLabel}</p>
+          <p className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{stats.nightsInRangeTotal}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs font-medium text-muted-foreground">Check-ins · 7d</p>
@@ -403,12 +404,25 @@ export default function ShortLets() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
-          {/* Upcoming bookings */}
+          {/* Bookings — upcoming, or everything in the picked range */}
           <div className="rounded-xl border bg-card">
-            <div className="px-4 pt-4 pb-2">
-              <h2 className="text-sm font-semibold">Upcoming bookings</h2>
+            <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">
+                {listMode === "upcoming" ? "Upcoming bookings" : `Bookings · ${rangeLabel}`}
+              </h2>
+              <div className="flex rounded-lg border overflow-hidden">
+                {[["upcoming", "Upcoming"], ["range", "In range"]].map(([v, l]) => (
+                  <button
+                    key={v}
+                    onClick={() => setListMode(v)}
+                    className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${listMode === v ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
             </div>
-            {upcoming.length === 0 ? (
+            {(listMode === "upcoming" ? upcoming : inRangeBookings).length === 0 ? (
               <EmptyState
                 icon={Palmtree}
                 title="No bookings yet"
@@ -421,7 +435,7 @@ export default function ShortLets() {
               />
             ) : (
               <div className="divide-y divide-border">
-                {upcoming.map((b) => {
+                {(listMode === "upcoming" ? upcoming : inRangeBookings).map((b) => {
                   const property = properties.find((p) => p.id === b.property_id);
                   const clean = tickets.find((t) => t.id === b.cleaning_ticket_id);
                   const nights = nightsBetween(b.check_in, b.check_out);
@@ -511,6 +525,66 @@ export default function ShortLets() {
         </div>
 
         <div className="space-y-4">
+          {/* Occupancy — % of available nights booked in the selected range */}
+          <div className="rounded-xl border bg-card p-4">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h2 className="text-sm font-semibold">Occupancy</h2>
+              <Select value={occScope} onValueChange={setOccScope}>
+                <SelectTrigger className="h-7 w-[150px] text-xs bg-card"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="portfolio">Whole portfolio</SelectItem>
+                  {shortLetProps.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground mb-1">{rangeLabel}</p>
+            {!occupancy ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">
+                Turn on short-let mode for a property below to track occupancy.
+              </p>
+            ) : (
+              <div className="relative h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Booked", value: occupancy.booked },
+                        { name: "Vacant", value: occupancy.vacant },
+                      ]}
+                      dataKey="value"
+                      innerRadius={58}
+                      outerRadius={80}
+                      startAngle={90}
+                      endAngle={-270}
+                      strokeWidth={0}
+                      paddingAngle={occupancy.booked > 0 && occupancy.vacant > 0 ? 2 : 0}
+                    >
+                      <Cell fill="#ec4899" />
+                      <Cell fill="hsl(var(--muted))" />
+                    </Pie>
+                    <ReTooltip
+                      formatter={(v, name) => [`${v} night${v === 1 ? "" : "s"}`, name]}
+                      contentStyle={{ borderRadius: 8, fontSize: 12 }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-3xl font-semibold tabular-nums">{occupancy.pct}%</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {occupancy.booked}/{occupancy.totalNights} nights
+                  </span>
+                </div>
+              </div>
+            )}
+            {occupancy && occScope === "portfolio" && occupancy.propCount > 1 && (
+              <p className="text-[11px] text-muted-foreground text-center">
+                across {occupancy.propCount} short-let properties
+              </p>
+            )}
+          </div>
+
           {/* Property setup */}
           <PropertySetup properties={properties} cleaners={cleaners} reload={reload} />
 
