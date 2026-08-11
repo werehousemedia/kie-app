@@ -9,6 +9,7 @@ import {
   ExternalLink,
   BellRing,
   ShieldAlert,
+  HardHat,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
@@ -17,8 +18,11 @@ import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import { ListSkeleton } from "@/components/shared/Skeletons";
 import PropertyLink from "@/components/shared/PropertyLink";
+import BookContractorDialog from "@/components/shared/BookContractorDialog";
+import PRSReadinessPanel from "@/components/compliance/PRSReadinessPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
@@ -62,12 +66,14 @@ const RAG_TINT = {
 let driftFixRan = false;
 
 export default function Compliance() {
-  const { compliance, properties, reload, loading } = useKieData();
+  const { compliance, properties, tasks, tenancies, tenants, contractors, prsRegistrations, reload, loading } = useKieData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = useState(() => STATUS_PARAM_MAP[searchParams.get("status")] || null);
   const [text, setText] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [uploadingId, setUploadingId] = useState(null);
+  const [creatingJobId, setCreatingJobId] = useState(null);
+  const [bookingTask, setBookingTask] = useState(null);
   const fileInputRef = useRef(null);
   const uploadTargetRef = useRef(null);
 
@@ -159,6 +165,48 @@ export default function Compliance() {
       reload();
     } catch (e) {
       toast.error(`Couldn't log reminder: ${e?.message || "unknown error"}`);
+    }
+  };
+
+  // "Create job": a Compliance Task for this record (reusing the one the task
+  // engine already made if it exists), then straight into contractor booking.
+  const createJob = async (record) => {
+    setCreatingJobId(record.id);
+    try {
+      const propName = properties.find((p) => p.id === record.property_id)?.name || "property";
+      const sourceKey = `compliance:${record.id}:${(record.expiry_date || "").slice(0, 10)}`;
+      let task = tasks.find((t) => t.source_key === sourceKey && t.status !== "Done");
+      if (!task) {
+        const d = daysUntil(record.expiry_date);
+        const overdue = d != null && d < 0;
+        task = await base44.entities.Task.create({
+          title: `Book ${record.category} — ${propName}`,
+          category: "Compliance",
+          urgency: overdue ? (record.category === "Gas Safety Certificate" ? "emergency" : "high") : "medium",
+          status: "Open",
+          due_date: (record.expiry_date || "").slice(0, 10) || undefined,
+          property_id: record.property_id,
+          source: "compliance_page",
+          source_type: "ComplianceRecord",
+          source_id: record.id,
+          source_key: sourceKey,
+          is_demo: !!record.is_demo,
+        });
+        await logActivity(base44, {
+          property_id: record.property_id,
+          event_type: "Task created",
+          description: `Task created: Book ${record.category} — ${propName}`,
+          related_id: task.id,
+          severity: record.computed === "Overdue" ? "warning" : "info",
+        });
+        toast.success("Job created — pick a contractor");
+        reload();
+      }
+      setBookingTask(task);
+    } catch (e) {
+      toast.error(`Couldn't create job: ${e?.message || "unknown error"}`);
+    } finally {
+      setCreatingJobId(null);
     }
   };
 
