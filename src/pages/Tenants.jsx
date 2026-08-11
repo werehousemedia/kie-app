@@ -174,7 +174,7 @@ export default function Tenants() {
             {filtered.map((t) => {
               const prop = propertyOf(t);
               return (
-                <div key={t.id} className="flex items-center gap-3 px-4 py-3 min-h-[56px] hover:bg-muted transition-colors">
+                <div key={t.id} className="flex items-center gap-3 px-4 py-3 min-h-[56px] hover:bg-muted transition-colors border-l-[3px] border-l-cyan-500">
                   <Link to={`/tenants/${t.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                     <TenantAvatar tenant={t} size="md" />
                     <div className="flex-1 min-w-0">
@@ -209,7 +209,7 @@ export default function Tenants() {
                     const prop = propertyOf(t);
                     return (
                       <tr key={t.id} onClick={() => navigate(`/tenants/${t.id}`)} className="hover:bg-muted transition-colors cursor-pointer">
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 border-l-[3px] border-l-cyan-500">
                           <Link to={`/tenants/${t.id}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sage))] rounded">
                             <TenantAvatar tenant={t} size="md" />
                             <span className="min-w-0">
