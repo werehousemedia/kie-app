@@ -8,7 +8,7 @@ import {
   Sparkles,
   CalendarDays,
   Banknote,
-  BrushCleaning,
+  SprayCan,
   Copy,
   XCircle,
   MoonStar,
@@ -318,7 +318,7 @@ export default function ShortLets() {
             const clean = tickets.find((t) => t.id === b.cleaning_ticket_id);
             return (
               <div key={`out_${b.id}`} className="flex items-center gap-3 px-4 py-3">
-                <BrushCleaning className="w-4 h-4 text-violet-500 shrink-0" />
+                <SprayCan className="w-4 h-4 text-violet-500 shrink-0" />
                 <span className="flex-1 min-w-0 text-sm truncate">
                   <span className="font-medium">{b.guest_name || "Guest"}</span> checks out today —{" "}
                   <PropertyLink property={properties.find((p) => p.id === b.property_id)} />
@@ -407,7 +407,7 @@ export default function ShortLets() {
                           disabled={bookingCleanId === b.id}
                           className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border bg-card hover:bg-muted text-xs font-medium transition-colors"
                         >
-                          <BrushCleaning className="w-3.5 h-3.5" />
+                          <SprayCan className="w-3.5 h-3.5" />
                           {bookingCleanId === b.id ? "Booking…" : "Book clean"}
                         </button>
                       )}
@@ -792,7 +792,7 @@ function AddBookingModal({ open, onClose, properties, onCreated }) {
             <Input value={form.notes} onChange={(e) => set("notes", e.target.value)} className="mt-1" placeholder="e.g. late arrival, dog staying" />
           </div>
           <label className="flex items-center gap-3 rounded-xl border px-3.5 py-2.5">
-            <BrushCleaning className="w-4 h-4 text-muted-foreground shrink-0" />
+            <SprayCan className="w-4 h-4 text-muted-foreground shrink-0" />
             <span className="flex-1 text-sm font-medium">Auto-book turnaround clean</span>
             <Switch checked={autoClean} onCheckedChange={setAutoClean} />
           </label>
