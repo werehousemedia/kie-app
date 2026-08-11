@@ -55,6 +55,23 @@
     "council_tax_band": {
       "type": "string"
     },
+    "is_short_let": {
+      "type": "boolean",
+      "default": false,
+      "description": "Listed on Airbnb/Booking.com \u2014 enables short-let automations. App-owned, never synced from sheet."
+    },
+    "cleaning_contractor_id": {
+      "type": "string",
+      "description": "Preferred cleaning contractor for turnaround cleans. App-owned."
+    },
+    "airbnb_ical_url": {
+      "type": "string",
+      "description": "Airbnb listing iCal export URL. App-owned."
+    },
+    "booking_ical_url": {
+      "type": "string",
+      "description": "Booking.com listing iCal export URL. App-owned."
+    },
     "notes": {
       "type": "string"
     },
