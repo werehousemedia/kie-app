@@ -361,6 +361,11 @@ export default function Compliance() {
                         <Upload className="w-3 h-3" /> {uploadingId === r.id ? "Uploading…" : "Upload"}
                       </button>
                     )}
+                    {(r.computed === "Overdue" || r.computed === "Expiring soon") && (
+                      <button onClick={() => createJob(r)} disabled={creatingJobId === r.id} className="inline-flex items-center gap-1 text-xs font-medium text-[hsl(var(--sage))] hover:underline disabled:opacity-60">
+                        <HardHat className="w-3 h-3" /> {creatingJobId === r.id ? "Creating…" : "Create job"}
+                      </button>
+                    )}
                     {r.computed !== "Compliant" && (
                       <button onClick={() => logReminder(r)} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
                         <BellRing className="w-3 h-3" /> Log reminder
@@ -419,8 +424,13 @@ export default function Compliance() {
                                 <Upload className="w-3 h-3" /> {uploadingId === r.id ? "Uploading…" : "Upload"}
                               </button>
                             )}
+                            {(r.computed === "Overdue" || r.computed === "Expiring soon") && (
+                              <button onClick={() => createJob(r)} disabled={creatingJobId === r.id} className="inline-flex items-center gap-1 text-xs font-medium text-[hsl(var(--sage))] hover:underline disabled:opacity-60 whitespace-nowrap">
+                                <HardHat className="w-3 h-3" /> {creatingJobId === r.id ? "Creating…" : "Create job"}
+                              </button>
+                            )}
                             {r.computed !== "Compliant" && (
-                              <button onClick={() => logReminder(r)} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+                              <button onClick={() => logReminder(r)} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground whitespace-nowrap">
                                 <BellRing className="w-3 h-3" /> Log reminder
                               </button>
                             )}
