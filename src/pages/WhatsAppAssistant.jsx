@@ -271,6 +271,7 @@ export default function WhatsAppAssistant() {
         severity: sevFromUrgency(triage.urgency),
       });
       toast.success("Maintenance ticket created");
+      runTaskEngine(); // surface the matching Task immediately
       reload();
       return ticket;
     } catch (e) {
