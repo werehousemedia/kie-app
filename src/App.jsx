@@ -12,6 +12,8 @@ import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
 import Overview from '@/pages/Overview';
+import CalendarPage from '@/pages/CalendarPage';
+import OpenTasks from '@/pages/OpenTasks';
 import WhatsAppAssistant from '@/pages/WhatsAppAssistant';
 import Properties from '@/pages/Properties';
 import ShortLets from '@/pages/ShortLets';
@@ -78,6 +80,8 @@ const AuthenticatedApp = () => {
       <Route element={<ProtectedRoute unauthenticatedElement={<RedirectToLogin />} />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Overview />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/tasks" element={<OpenTasks />} />
           <Route path="/whatsapp" element={<WhatsAppAssistant />} />
           <Route path="/properties" element={<Properties />} />
           <Route path="/shortlets" element={<ShortLets />} />
