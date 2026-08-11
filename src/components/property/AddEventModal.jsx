@@ -15,32 +15,36 @@ const ISSUE_TYPES = ["plumbing", "heating", "electricity", "appliance", "structu
 
 // Calendar "add event": creates a REAL record (Bill, MaintenanceTicket or
 // ComplianceRecord) with the property pre-filled — never a duplicate
-// calendar-only row.
-export default function AddEventModal({ open, onClose, onSaved, propertyId, kind }) {
+// calendar-only row. `defaultDate` (YYYY-MM-DD) prefills the kind's date field
+// so "add on this day" from the calendar lands ready to save.
+export default function AddEventModal({ open, onClose, onSaved, propertyId, kind, defaultDate = "" }) {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
       setForm(
-        kind === "bill" ? { category: "Rent", amount: "", due_date: "", is_income: false }
-        : kind === "maintenance" ? { description: "", urgency: "medium", issue_type: "general", appointment_date: "" }
-        : { category: "Gas Safety Certificate", issue_date: "", expiry_date: "", provider: "" }
+        kind === "bill" ? { category: "Rent", amount: "", due_date: defaultDate || "" }
+        : kind === "maintenance" ? { description: "", urgency: "medium", issue_type: "general", appointment_date: defaultDate || "" }
+        : { category: "Gas Safety Certificate", issue_date: "", expiry_date: defaultDate || "", provider: "" }
       );
     }
-  }, [open, kind]);
+  }, [open, kind, defaultDate]);
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const setInput = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async () => {
+    if (saving) return;
     setSaving(true);
     try {
       if (kind === "bill") {
         if (!form.due_date || !form.amount) { toast.error("Due date and amount are required"); setSaving(false); return; }
+        const amount = parseFloat(form.amount);
+        if (!Number.isFinite(amount)) { toast.error("Amount must be a number"); setSaving(false); return; }
         await base44.entities.Bill.create({
           property_id: propertyId, category: form.category, due_date: form.due_date,
-          amount: parseFloat(form.amount), status: "Due", is_income: form.category === "Rent",
+          amount, status: "Due", is_income: form.category === "Rent",
           is_demo: false, source: "manual",
         });
         await logActivity(base44, { property_id: propertyId, event_type: "Bill update", description: `${form.category} bill added (£${form.amount})` });
@@ -71,7 +75,7 @@ export default function AddEventModal({ open, onClose, onSaved, propertyId, kind
       onSaved();
       onClose();
     } catch (e) {
-      toast.error("Failed to save");
+      toast.error(`Failed to save${e?.message ? `: ${e.message}` : ""}`);
     } finally {
       setSaving(false);
     }
@@ -81,42 +85,42 @@ export default function AddEventModal({ open, onClose, onSaved, propertyId, kind
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{titles[kind] || "Add event"}</DialogTitle></DialogHeader>
         <div className="space-y-3 py-2">
           {kind === "bill" && (
             <>
-              <div className="space-y-1.5"><Label>Category</Label><Select value={form.category || ""} onValueChange={set("category")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{BILL_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5"><Label>Due date</Label><Input type="date" value={form.due_date || ""} onChange={setInput("due_date")} /></div>
-                <div className="space-y-1.5"><Label>Amount (£)</Label><Input type="number" value={form.amount || ""} onChange={setInput("amount")} /></div>
+              <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Category</Label><Select value={form.category || ""} onValueChange={set("category")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{BILL_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Due date</Label><Input type="date" value={form.due_date || ""} onChange={setInput("due_date")} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Amount (£)</Label><Input type="number" inputMode="decimal" value={form.amount || ""} onChange={setInput("amount")} /></div>
               </div>
             </>
           )}
           {kind === "maintenance" && (
             <>
-              <div className="space-y-1.5"><Label>Description</Label><Textarea rows={2} value={form.description || ""} onChange={setInput("description")} /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5"><Label>Issue type</Label><Select value={form.issue_type || ""} onValueChange={set("issue_type")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ISSUE_TYPES.map((c) => <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>)}</SelectContent></Select></div>
-                <div className="space-y-1.5"><Label>Urgency</Label><Select value={form.urgency || ""} onValueChange={set("urgency")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["low", "medium", "high", "emergency"].map((c) => <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Description</Label><Textarea rows={2} value={form.description || ""} onChange={setInput("description")} placeholder="What needs doing?" /></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Issue type</Label><Select value={form.issue_type || ""} onValueChange={set("issue_type")}><SelectTrigger className="capitalize"><SelectValue /></SelectTrigger><SelectContent>{ISSUE_TYPES.map((c) => <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>)}</SelectContent></Select></div>
+                <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Urgency</Label><Select value={form.urgency || ""} onValueChange={set("urgency")}><SelectTrigger className="capitalize"><SelectValue /></SelectTrigger><SelectContent>{["low", "medium", "high", "emergency"].map((c) => <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>)}</SelectContent></Select></div>
               </div>
-              <div className="space-y-1.5"><Label>Appointment date (optional)</Label><Input type="date" value={form.appointment_date || ""} onChange={setInput("appointment_date")} /></div>
+              <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Appointment date (optional)</Label><Input type="date" value={form.appointment_date || ""} onChange={setInput("appointment_date")} /></div>
             </>
           )}
           {kind === "compliance" && (
             <>
-              <div className="space-y-1.5"><Label>Document type</Label><Select value={form.category || ""} onValueChange={set("category")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{COMPLIANCE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5"><Label>Issue date</Label><Input type="date" value={form.issue_date || ""} onChange={setInput("issue_date")} /></div>
-                <div className="space-y-1.5"><Label>Expiry date</Label><Input type="date" value={form.expiry_date || ""} onChange={setInput("expiry_date")} /></div>
+              <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Document type</Label><Select value={form.category || ""} onValueChange={set("category")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{COMPLIANCE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Issue date</Label><Input type="date" value={form.issue_date || ""} onChange={setInput("issue_date")} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Expiry date</Label><Input type="date" value={form.expiry_date || ""} onChange={setInput("expiry_date")} /></div>
               </div>
-              <div className="space-y-1.5"><Label>Provider / engineer</Label><Input value={form.provider || ""} onChange={setInput("provider")} /></div>
+              <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">Provider / engineer</Label><Input value={form.provider || ""} onChange={setInput("provider")} /></div>
             </>
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={saving}>Add</Button>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={saving}>{saving ? "Saving…" : "Add"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
