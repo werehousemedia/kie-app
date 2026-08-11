@@ -707,6 +707,7 @@ function AddTicketModal({ open, onClose, properties, tenants, reload }) {
         ...(form.urgency === "emergency" ? { severity: "critical" } : {}),
       });
       toast.success("Job created");
+      runTaskEngine(); // surface the matching Task immediately
       setForm(empty);
       onClose();
       reload();
