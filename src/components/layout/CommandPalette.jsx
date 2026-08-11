@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import {
@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/command";
 import { useKieData } from "@/lib/useKieData";
 import { useDemoFilter } from "@/lib/DemoFilterContext";
+import { daysUntil } from "@/lib/kieUtils";
+import { kindMeta } from "@/lib/kindTaxonomy";
 
 const PAGES = [
   { label: "Overview", to: "/", icon: LayoutDashboard },
@@ -62,7 +64,7 @@ const ACTIONS = [
 // Global search + actions. ⌘K / Ctrl+K everywhere, search icon on mobile.
 export default function CommandPalette({ open, onOpenChange }) {
   const navigate = useNavigate();
-  const { properties, tenants, contractors, tickets, conversations } = useKieData();
+  const { properties, tenants, contractors, tickets, conversations, compliance, bills } = useKieData();
   const { resolvedTheme, setTheme } = useTheme();
   const { hideDemo, setHideDemo } = useDemoFilter();
 
@@ -74,6 +76,72 @@ export default function CommandPalette({ open, onOpenChange }) {
   const openTickets = tickets
     .filter((t) => t.status !== "Complete" && t.status !== "Cancelled")
     .slice(0, 25);
+
+  const propName = (id) => properties.find((p) => p.id === id)?.name || "";
+
+  // Unified status search: typing "overdue" surfaces ONE ungrouped list across
+  // properties, tenants, compliance and maintenance, longest-overdue first.
+  // Each row carries its kind-of-thing colour tag.
+  const overdueResults = useMemo(() => {
+    const out = [];
+    for (const c of compliance) {
+      const d = daysUntil(c.expiry_date);
+      if (d != null && d < 0) {
+        out.push({ kind: "compliance", days: Math.abs(d), label: `${c.category} — ${propName(c.property_id)}`, to: "/compliance?status=overdue" });
+      }
+    }
+    for (const b of bills) {
+      if (b.status !== "Overdue") continue;
+      const d = daysUntil(b.due_date);
+      out.push({
+        kind: "finance",
+        days: d != null && d < 0 ? Math.abs(d) : 0,
+        label: `${b.category} £${Math.round(b.amount || 0)} — ${propName(b.property_id)}`,
+        to: b.category === "Rent" ? "/finance?tab=rent&status=Overdue" : "/finance?tab=bills",
+      });
+    }
+    for (const t of tenants) {
+      if (t.payment_status !== "Overdue") continue;
+      const bill = bills
+        .filter((b) => b.category === "Rent" && b.status === "Overdue" && b.property_id === t.property_id)
+        .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)))[0];
+      const d = bill ? daysUntil(bill.due_date) : null;
+      out.push({ kind: "tenant", days: d != null && d < 0 ? Math.abs(d) : 0, label: `${t.name} — rent overdue`, to: `/tenants/${t.id}` });
+    }
+    for (const tk of tickets) {
+      if (tk.status === "Complete" || tk.status === "Cancelled") continue;
+      const appt = tk.appointment_date ? daysUntil(tk.appointment_date) : null;
+      if (appt != null && appt < 0) {
+        out.push({ kind: "maintenance", days: Math.abs(appt), label: `${(tk.description || "Job").slice(0, 60)} — missed visit`, to: `/maintenance?ticket=${tk.id}` });
+      }
+    }
+    // Property roll-ups: one row per property with overdue items.
+    for (const p of properties) {
+      const worst = Math.max(
+        0,
+        ...compliance.filter((c) => c.property_id === p.id).map((c) => -1 * (daysUntil(c.expiry_date) ?? 0)),
+        ...bills.filter((b) => b.property_id === p.id && b.status === "Overdue").map((b) => -1 * (daysUntil(b.due_date) ?? 0)),
+      );
+      const count =
+        compliance.filter((c) => c.property_id === p.id && (daysUntil(c.expiry_date) ?? 1) < 0).length +
+        bills.filter((b) => b.property_id === p.id && b.status === "Overdue").length;
+      if (count > 0) {
+        out.push({ kind: "property", days: worst, label: `${p.name} — ${count} overdue item${count === 1 ? "" : "s"}`, to: `/properties/${p.id}` });
+      }
+    }
+    return out.sort((a, b) => b.days - a.days).slice(0, 30);
+  }, [compliance, bills, tenants, tickets, properties]);
+
+  const expiringResults = useMemo(() => {
+    const out = [];
+    for (const c of compliance) {
+      const d = daysUntil(c.expiry_date);
+      if (d != null && d >= 0 && d <= 60) {
+        out.push({ kind: "compliance", days: d, label: `${c.category} — ${propName(c.property_id)}`, to: "/compliance?status=expiring" });
+      }
+    }
+    return out.sort((a, b) => a.days - b.days).slice(0, 15);
+  }, [compliance, properties]);
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
