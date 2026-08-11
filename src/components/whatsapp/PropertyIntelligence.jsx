@@ -1,223 +1,233 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
-  AlertTriangle, ShieldCheck, Wrench, FileWarning,
   Building2,
+  ShieldAlert,
+  Flame,
+  Wrench,
+  HardHat,
+  Wallet,
+  ChevronRight,
+  Phone,
 } from "lucide-react";
 import { useKieData } from "@/lib/useKieData";
+import { formatGBP, formatDate, daysUntil, statusColor, urgencyColor } from "@/lib/kieUtils";
 import { TenantAvatar } from "@/components/shared/TenantChip";
-import { formatGBP, formatDate, daysUntil, urgencyColor, statusColor, matchContractors } from "@/lib/kieUtils";
 
-export default function PropertyIntelligence({ property, tenant, triageIssueType, onAssignContractor }) {
+const STANDARD_CERTS = ["Gas Safety Certificate", "EICR", "EPC"];
+
+function Section({ icon: Icon, title, children, action }) {
+  return (
+    <div className="px-3 py-3 border-b last:border-b-0">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+        <p className="text-[11px] font-semibold text-muted-foreground">{title}</p>
+        {action && <span className="ml-auto">{action}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// Right rail: everything the landlord needs to know about the property while
+// talking to its tenant — compliance gaps FIRST (they're the liability).
+export default function PropertyIntelligence({ property, tenant }) {
   const { equipment, compliance, tickets, contractors, bills } = useKieData();
+
+  const gaps = useMemo(() => {
+    if (!property) return [];
+    const records = compliance.filter((c) => c.property_id === property.id);
+    const out = [];
+    for (const c of records) {
+      const d = daysUntil(c.expiry_date);
+      if (c.status === "Missing" || (!c.expiry_date && c.status !== "Compliant")) {
+        out.push({ id: c.id, label: c.category, state: "missing" });
+      } else if (d != null && d < 0) {
+        out.push({ id: c.id, label: `${c.category} — ${Math.abs(d)}d overdue`, state: "overdue" });
+      } else if (d != null && d <= 60) {
+        out.push({ id: c.id, label: `${c.category} — ${d}d left`, state: "expiring" });
+      }
+    }
+    const have = new Set(records.map((c) => c.category));
+    const required = [...STANDARD_CERTS];
+    if (property.hmo_status && property.hmo_status !== "Not HMO") required.push("HMO licence");
+    for (const cat of required) {
+      if (!have.has(cat)) out.push({ id: `absent_${cat}`, label: `${cat} — not on file`, state: "missing" });
+    }
+    const rank = { overdue: 0, missing: 1, expiring: 2 };
+    return out.sort((a, b) => rank[a.state] - rank[b.state]);
+  }, [compliance, property]);
 
   if (!property) {
     return (
-      <div className="w-80 border-l border-slate-200 bg-white p-6 text-center">
-        <Building2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-        <p className="text-sm text-slate-400">Select a conversation to see property intelligence</p>
+      <div className="p-4 text-sm text-muted-foreground">
+        Select a conversation to see property intelligence.
       </div>
     );
   }
 
-  const propEquipment = equipment.filter((e) => e.property_id === property.id);
-  const propCompliance = compliance.filter((c) => c.property_id === property.id);
-  const propTickets = tickets.filter((t) => t.property_id === property.id && t.status !== "Complete" && t.status !== "Cancelled");
-  const propBills = bills.filter((b) => b.property_id === property.id && b.status !== "Paid");
+  const propEquipment = equipment.filter((e) => e.property_id === property.id).slice(0, 5);
+  const openTickets = tickets
+    .filter((t) => t.property_id === property.id && t.status !== "Complete" && t.status !== "Cancelled")
+    .slice(0, 4);
+  const nearby = contractors
+    .filter((c) => c.preferred || c.availability === "Available")
+    .slice(0, 3);
+  const recentBills = bills
+    .filter((b) => b.property_id === property.id && b.status !== "Paid")
+    .slice(0, 3);
 
-  const complianceIssues = propCompliance.filter((c) => {
-    const d = daysUntil(c.expiry_date);
-    return d !== null && d <= 60;
-  });
-  const equipmentServiceDue = propEquipment.filter((e) => {
-    const d = daysUntil(e.next_service_due);
-    return d !== null && d <= 60;
-  });
-  const urgentTickets = propTickets.filter((t) => t.urgency === "emergency" || t.urgency === "high");
-
-  const matchedContractors = triageIssueType ? matchContractors(contractors, triageIssueType, property.postcode) : [];
+  const GAP_STYLE = {
+    overdue: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+    missing: "bg-muted text-muted-foreground",
+    expiring: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  };
 
   return (
-    <div className="w-80 border-l border-slate-200 bg-white overflow-y-auto">
-      <div className="p-4 border-b border-slate-200">
-        <div className="flex items-center gap-2 mb-1">
-          <Building2 className="w-4 h-4 text-slate-500" />
-          <h3 className="text-sm font-semibold text-slate-900">Property Intelligence</h3>
+    <div className="h-full overflow-y-auto">
+      <div className="px-3 py-3 border-b">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <Building2 className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="min-w-0">
+            <Link to={`/properties/${property.id}`} className="text-sm font-semibold hover:underline truncate block">
+              {property.name}
+            </Link>
+            <p className="text-xs text-muted-foreground truncate">{property.address}</p>
+          </div>
         </div>
-        <p className="text-sm font-medium text-slate-800">{property.name}</p>
-        <p className="text-xs text-slate-500">{property.address}, {property.postcode}</p>
-        <div className="flex items-center gap-1.5 mt-2">
-          <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor(property.occupancy_status)}`}>{property.occupancy_status}</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{property.property_type}</span>
-          {property.hmo_status !== "Not HMO" && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">{property.hmo_status}</span>}
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor(property.occupancy_status)}`}>
+            {property.occupancy_status || "—"}
+          </span>
+          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">
+            {property.property_type}
+          </span>
+          {property.hmo_status && property.hmo_status !== "Not HMO" && (
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">
+              {property.hmo_status}
+            </span>
+          )}
         </div>
       </div>
 
-      {(complianceIssues.length > 0 || equipmentServiceDue.length > 0 || urgentTickets.length > 0) && (
-        <div className="m-4 p-3 bg-rose-50 border border-rose-200 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4 text-rose-600" />
-            <p className="text-sm font-semibold text-rose-900">Action needed</p>
+      <Section
+        icon={ShieldAlert}
+        title="Compliance gaps"
+        action={
+          <Link to="/compliance" className="text-[11px] font-medium text-[hsl(var(--sage))] hover:underline">
+            Fix <ChevronRight className="w-3 h-3 inline" />
+          </Link>
+        }
+      >
+        {gaps.length === 0 ? (
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+            All certificates in order ✓
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {gaps.map((g) => (
+              <Link
+                key={g.id}
+                to={g.state === "overdue" ? "/compliance?status=overdue" : g.state === "missing" ? "/compliance?status=missing" : "/compliance?status=expiring"}
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80 ${GAP_STYLE[g.state]}`}
+              >
+                {g.label}
+              </Link>
+            ))}
           </div>
-          <div className="space-y-1.5">
-            {complianceIssues.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 text-xs text-rose-700">
-                <FileWarning className="w-3.5 h-3.5 shrink-0" />
-                <span>{c.category} expires in {daysUntil(c.expiry_date)}d</span>
-              </div>
-            ))}
-            {equipmentServiceDue.map((e) => (
-              <div key={e.id} className="flex items-center gap-2 text-xs text-rose-700">
-                <Wrench className="w-3.5 h-3.5 shrink-0" />
-                <span>{e.type} service due in {daysUntil(e.next_service_due)}d</span>
-              </div>
-            ))}
-            {urgentTickets.map((t) => (
-              <div key={t.id} className="flex items-center gap-2 text-xs text-rose-700">
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                <span className="capitalize">{t.urgency}: {t.description?.slice(0, 40)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </Section>
 
       {tenant && (
-        <div className="px-4 py-3 border-b border-slate-100">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Tenant</p>
-          <Link to={`/tenants/${tenant.id}`} className="flex items-center gap-2.5 group">
+        <Section icon={Phone} title="Tenant">
+          <div className="flex items-center gap-2.5">
             <TenantAvatar tenant={tenant} size="md" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800 group-hover:underline decoration-[hsl(var(--sage))] underline-offset-2">{tenant.name}</p>
-              <p className="text-xs text-slate-500">{tenant.phone}</p>
+            <div className="min-w-0 flex-1">
+              <Link to={`/tenants/${tenant.id}`} className="text-sm font-medium hover:underline truncate block">
+                {tenant.name}
+              </Link>
+              <p className="text-xs text-muted-foreground truncate">
+                {tenant.phone || "no phone"} · rent {tenant.rent_amount ? formatGBP(tenant.rent_amount) : "—"}
+              </p>
             </div>
-          </Link>
-          <div className="flex items-center gap-2 mt-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor(tenant.payment_status)}`}>{tenant.payment_status}</span>
-            <span className="text-xs text-slate-500">{formatGBP(tenant.rent_amount)}/mo</span>
+            {tenant.payment_status && (
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0 ${statusColor(tenant.payment_status)}`}>
+                {tenant.payment_status}
+              </span>
+            )}
           </div>
-        </div>
+        </Section>
       )}
 
-      <div className="px-4 py-3 border-b border-slate-100">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Equipment Register</p>
-        {propEquipment.length === 0 ? (
-          <p className="text-xs text-slate-400">No equipment registered</p>
-        ) : (
-          <div className="space-y-2">
-            {propEquipment.map((e) => {
-              const serviceDue = daysUntil(e.next_service_due);
-              return (
-                <div key={e.id} className="p-2.5 bg-slate-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <p className="text-sm font-medium text-slate-800">{e.make} {e.model}</p>
-                    <span className="text-[10px] text-slate-400 uppercase">{e.type}</span>
-                  </div>
-                  <p className="text-xs text-slate-500">Installed {formatDate(e.install_date)}</p>
-                  {serviceDue !== null && (
-                    <p className={`text-xs mt-0.5 ${serviceDue < 0 ? "text-rose-600" : serviceDue <= 30 ? "text-amber-600" : "text-slate-400"}`}>
-                      Next service: {formatDate(e.next_service_due)} ({serviceDue < 0 ? `${Math.abs(serviceDue)}d overdue` : `in ${serviceDue}d`})
-                    </p>
-                  )}
-                  {e.warranty_info && <p className="text-xs text-slate-400 mt-0.5">Warranty: {e.warranty_info}</p>}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 py-3 border-b border-slate-100">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Compliance</p>
-          <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-        </div>
-        {propCompliance.length === 0 ? (
-          <p className="text-xs text-slate-400">No compliance records</p>
-        ) : (
+      {propEquipment.length > 0 && (
+        <Section icon={Flame} title="Key equipment">
           <div className="space-y-1.5">
-            {propCompliance.map((c) => {
-              const d = daysUntil(c.expiry_date);
-              return (
-                <div key={c.id} className="flex items-center justify-between text-xs">
-                  <span className="text-slate-600">{c.category}</span>
-                  <span className={`px-1.5 py-0.5 rounded-full ${statusColor(c.status)}`}>
-                    {d !== null && d >= 0 ? `${d}d` : c.status}
+            {propEquipment.map((e) => (
+              <div key={e.id} className="text-xs flex items-center gap-2">
+                <span className="flex-1 min-w-0 truncate">
+                  {[e.make, e.model].filter(Boolean).join(" ") || e.type}
+                  <span className="text-muted-foreground"> · {e.location || e.type}</span>
+                </span>
+                {e.next_service_due && daysUntil(e.next_service_due) != null && daysUntil(e.next_service_due) <= 60 && (
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium shrink-0">
+                    service {daysUntil(e.next_service_due) < 0 ? "overdue" : `in ${daysUntil(e.next_service_due)}d`}
                   </span>
-                </div>
-              );
-            })}
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      <Section icon={Wrench} title="Open jobs here">
+        {openTickets.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No open maintenance.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {openTickets.map((t) => (
+              <Link key={t.id} to={`/maintenance?ticket=${t.id}`} className="flex items-center gap-2 text-xs hover:underline">
+                <span className="flex-1 min-w-0 truncate">{(t.description || "Job").slice(0, 50)}</span>
+                <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium shrink-0 ${urgencyColor(t.urgency)}`}>
+                  {t.urgency || "low"}
+                </span>
+              </Link>
+            ))}
           </div>
         )}
-      </div>
+      </Section>
 
-      {propTickets.length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-100">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Open Tickets ({propTickets.length})</p>
+      {nearby.length > 0 && (
+        <Section icon={HardHat} title="Go-to contractors">
           <div className="space-y-1.5">
-            {propTickets.map((t) => (
-              <div key={t.id} className="p-2 bg-slate-50 rounded-lg">
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${urgencyColor(t.urgency)}`}>{t.urgency}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
-                </div>
-                <p className="text-xs text-slate-600 truncate">{t.description}</p>
+            {nearby.map((c) => (
+              <div key={c.id} className="text-xs flex items-center gap-2">
+                <span className="flex-1 min-w-0 truncate">
+                  {c.name} <span className="text-muted-foreground">· {c.trade}</span>
+                </span>
+                <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium shrink-0 ${statusColor(c.availability)}`}>
+                  {c.availability || "—"}
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        </Section>
       )}
 
-      {matchedContractors.length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-100">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Wrench className="w-3.5 h-3.5 text-[hsl(var(--sage))]" />
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Matched Contractors</p>
-          </div>
-          <div className="space-y-2">
-            {matchedContractors.slice(0, 4).map((c) => (
-              <div key={c.id} className="p-2.5 bg-slate-50 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-medium text-slate-800">{c.name}</p>
-                    {c.preferred && <span className="text-[9px] bg-[hsl(var(--sage))] text-white px-1 py-0.5 rounded-full">PREFERRED</span>}
-                  </div>
-                  <span className="text-xs text-amber-500">★ {c.rating}</span>
-                </div>
-                <p className="text-xs text-slate-500">{c.trade} · {c.coverage_area}</p>
-                <div className="flex items-center justify-between mt-1.5">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${statusColor(c.availability)}`}>{c.availability}</span>
-                  <button
-                    onClick={() => onAssignContractor?.(c)}
-                    className="text-xs font-medium text-[hsl(var(--sage))] hover:underline"
-                  >
-                    Assign →
-                  </button>
-                </div>
+      {recentBills.length > 0 && (
+        <Section icon={Wallet} title="Unpaid bills here">
+          <div className="space-y-1.5">
+            {recentBills.map((b) => (
+              <div key={b.id} className="text-xs flex items-center gap-2">
+                <span className="flex-1 min-w-0 truncate">
+                  {b.category} <span className="text-muted-foreground">· due {formatDate(b.due_date)}</span>
+                </span>
+                <span className="font-medium tabular-nums shrink-0">{formatGBP(b.amount)}</span>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {propBills.length > 0 && (
-        <div className="px-4 py-3">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Upcoming Bills</p>
-          <div className="space-y-1.5">
-            {propBills.slice(0, 4).map((b) => {
-              const d = daysUntil(b.due_date);
-              return (
-                <div key={b.id} className="flex items-center justify-between text-xs">
-                  <span className="text-slate-600">{b.category}</span>
-                  <div className="text-right">
-                    <p className="font-medium text-slate-700">{formatGBP(b.amount)}</p>
-                    <p className={`text-[10px] ${d < 0 ? "text-rose-500" : "text-slate-400"}`}>{d < 0 ? `${Math.abs(d)}d overdue` : `in ${d}d`}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        </Section>
       )}
     </div>
   );
