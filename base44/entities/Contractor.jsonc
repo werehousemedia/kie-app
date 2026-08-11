@@ -73,5 +73,55 @@
   "required": [
     "name",
     "trade"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": "{{user.data.workspace_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "data.workspace_id": "{{user.data.workspace_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": "{{user.data.workspace_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": "{{user.data.workspace_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
