@@ -9,6 +9,7 @@
 // unauthenticated calls from the platform scheduler, so it returns nothing
 // sensitive (counts only) and rate-limits itself.
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { stampEntities, WS_FALLBACK } from "../../shared/workspace.ts";
 
 const MIN_INTERVAL_MS = 5 * 60 * 1000;
 const STALE_ENQUIRY_DAYS = 7;
@@ -27,7 +28,9 @@ function daysUntil(dateStr?: string | null): number | null {
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const db = base44.asServiceRole.entities;
+    // Tasks/events inherit their source record's workspace below; the fallback
+    // stamp only covers engine-owned records like AppSetting.
+    const db = stampEntities(base44.asServiceRole.entities, WS_FALLBACK);
 
     const body = await req.json().catch(() => ({} as Rec));
     const force = new URL(req.url).searchParams.get("force") === "1" || body?.force === 1 || body?.force === "1" || body?.force === true;
@@ -71,6 +74,7 @@ export default async function (req: Request): Promise<Response> {
       if (t.status === "Complete" || t.status === "Cancelled") continue;
       if (!t.property_id) continue;
       desired.push({
+        workspace_id: t.workspace_id || WS_FALLBACK,
         source_key: `maintenance:${t.id}`,
         title: (t.description || "Maintenance job").slice(0, 90),
         category: "Maintenance",
@@ -93,6 +97,7 @@ export default async function (req: Request): Promise<Response> {
       if (d == null || d > COMPLIANCE_WINDOW_DAYS || !c.property_id) continue;
       const overdue = d < 0;
       desired.push({
+        workspace_id: c.workspace_id || WS_FALLBACK,
         source_key: `compliance:${c.id}:${(c.expiry_date || "").slice(0, 10)}`,
         title: `Book ${c.category} — ${propName(c.property_id)}`,
         category: "Compliance",
@@ -114,6 +119,7 @@ export default async function (req: Request): Promise<Response> {
       const overdue = b.status === "Overdue" || (b.status !== "Paid" && d != null && d < 0);
       if (!overdue) continue;
       desired.push({
+        workspace_id: b.workspace_id || WS_FALLBACK,
         source_key: `rent:${b.id}`,
         title: `Chase overdue rent — ${propName(b.property_id)} (£${Math.round(b.amount || 0)})`,
         category: "Rent",
@@ -156,6 +162,7 @@ export default async function (req: Request): Promise<Response> {
       const staleDays = (Date.now() - new Date(staleSince).getTime()) / DAY_MS;
       if (isNaN(staleDays) || staleDays < STALE_ENQUIRY_DAYS) continue;
       desired.push({
+        workspace_id: c.workspace_id || WS_FALLBACK,
         source_key: `enquiry:${c.id}:${String(staleSince).slice(0, 10)}`,
         title: `Follow-up needed — enquiry at ${propName(c.property_id)}`,
         description: (c.last_message || "").slice(0, 200),
@@ -180,6 +187,7 @@ export default async function (req: Request): Promise<Response> {
       const task = await db.Task.create(clean);
       created++;
       await db.ActivityEvent.create({
+        workspace_id: d.workspace_id,
         property_id: d.property_id,
         tenant_id: d.tenant_id,
         event_type: "Task created",
@@ -225,6 +233,7 @@ export default async function (req: Request): Promise<Response> {
       await db.Task.update(t.id, { status: "Done", completed_at: new Date().toISOString() });
       completed++;
       await db.ActivityEvent.create({
+        workspace_id: t.workspace_id,
         property_id: t.property_id,
         event_type: "Task update",
         description: `Task auto-completed (source resolved): ${t.title}`,
@@ -254,6 +263,7 @@ export default async function (req: Request): Promise<Response> {
       await db.RentIncreaseNotice.update(n.id, { status: "Effective" });
       increasesApplied++;
       await db.ActivityEvent.create({
+        workspace_id: n.workspace_id,
         property_id: n.property_id,
         tenant_id: n.tenant_id,
         event_type: "Rent reminder",
