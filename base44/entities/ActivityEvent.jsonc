@@ -22,7 +22,9 @@
         "Document upload",
         "Integration sync",
         "Tenant update",
-        "Property update"
+        "Property update",
+        "Task created",
+        "Task update"
       ]
     },
     "description": {
