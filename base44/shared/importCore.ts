@@ -312,13 +312,18 @@ export async function runImport(db: any, tabs: Tab[], mapping: Mapping, opts: { 
 
       const key = `${normalizeName(name)}|${normalizePhone(phoneRaw)}`;
       const existing = tenantByKey.get(key);
+      // Renters' Rights Act 2025: fixed terms ceased on 1 May 2026, so a
+      // FUTURE tenancy end date in the sheet is legally void — import as
+      // periodic (null). A PAST end date is a genuine move-out and is kept.
+      const importToday = new Date().toISOString().slice(0, 10);
+      const rawTenancyEnd = cm.tenancy_end ? parseDate(row[cm.tenancy_end]) : null;
       const record: any = {
         name,
         phone: formatUkPhone(phoneRaw),
         email,
         property_id: property.id,
         tenancy_start: cm.tenancy_start ? parseDate(row[cm.tenancy_start]) : null,
-        tenancy_end: cm.tenancy_end ? parseDate(row[cm.tenancy_end]) : null,
+        tenancy_end: rawTenancyEnd && rawTenancyEnd <= importToday ? rawTenancyEnd : null,
         rent_amount: cm.rent_amount ? parseCurrency(row[cm.rent_amount]) : 0,
         source: "sheet_import",
         is_demo: false,
@@ -369,7 +374,7 @@ export async function runImport(db: any, tabs: Tab[], mapping: Mapping, opts: { 
             end_date: record.tenancy_end,
             rent_amount: rent,
             deposit_scheme: record.deposit_scheme || "",
-            status: start > today ? "Upcoming" : "Active",
+            status: start > today ? "Upcoming" : record.tenancy_end ? "Ended" : "Periodic",
             rent_history: [{ date: start, amount: rent }],
             source: "sheet_import",
             is_demo: false,
