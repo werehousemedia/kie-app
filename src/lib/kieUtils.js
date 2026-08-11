@@ -47,7 +47,9 @@ export const waMeLink = (phone) => {
 };
 
 export const gmailComposeLink = (email) =>
-  email ? `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}` : null;
+  email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ? `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}`
+    : null;
 
 export const daysUntil = (dateStr) => {
   if (!dateStr) return null;
