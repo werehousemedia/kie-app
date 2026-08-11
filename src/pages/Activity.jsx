@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Activity as ActivityIcon } from "lucide-react";
+import { Search, Activity as ActivityIcon, Lock } from "lucide-react";
 import { useKieData } from "@/lib/useKieData";
 import { timeAgo } from "@/lib/kieUtils";
 import PageHeader from "@/components/shared/PageHeader";
@@ -13,7 +13,17 @@ const EVENT_TYPES = [
   "WhatsApp message", "AI triage", "Maintenance created", "Maintenance status",
   "Contractor assigned", "Compliance reminder", "Bill update", "Rent reminder",
   "Document upload", "Integration sync", "Tenant update", "Property update",
+  "Task created", "Task update",
 ];
+
+// Precise timestamp for the evidence log — e.g. "14:32:05". The day is shown
+// by the sticky date header, so entries carry the exact time.
+const preciseTime = (ts) => {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+};
 
 const SEV_DOT = {
   critical: "bg-rose-500",
@@ -67,9 +77,14 @@ export default function Activity() {
   return (
     <div className="space-y-5 animate-fade-in">
       <PageHeader
-        title="Activity"
-        subtitle={`${activity.length} events — the audit trail behind every record`}
-      />
+        title="Evidence log"
+        subtitle="A time-stamped, unchangeable record of what happened at each property and why"
+      >
+        <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Lock className="w-3 h-3" /> {activity.length} events · entries are written automatically and never edited — your
+          audit trail for deposit disputes, PRS checks and Section 8 evidence
+        </p>
+      </PageHeader>
 
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1 sm:max-w-xs">
@@ -157,7 +172,10 @@ export default function Activity() {
                           )}
                         </span>
                       </span>
-                      <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">{timeAgo(a.timestamp)}</span>
+                      <span className="text-right shrink-0">
+                        <span className="block text-[11px] font-medium text-foreground/80 tabular-nums">{preciseTime(a.timestamp)}</span>
+                        <span className="block text-[10px] text-muted-foreground tabular-nums">{timeAgo(a.timestamp)}</span>
+                      </span>
                     </div>
                   );
                 })}
