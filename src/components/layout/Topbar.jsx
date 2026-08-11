@@ -43,7 +43,7 @@ export default function Topbar({ onQuickAdd, onOpenPalette }) {
       {/* Mobile brand mark — sidebar is hidden below lg */}
       <div className="lg:hidden flex items-center gap-2 mr-1">
         <div className="w-8 h-8 rounded-lg bg-[hsl(var(--sage))] flex items-center justify-center">
-          <Home className="w-4.5 h-4.5 w-[18px] h-[18px] text-white" />
+          <Home className="w-[18px] h-[18px] text-white" />
         </div>
         <span className="font-semibold tracking-tight text-foreground">KIE</span>
       </div>
