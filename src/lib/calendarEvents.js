@@ -2,20 +2,27 @@
 // table exists on purpose: every dot on the calendar IS a real record, so
 // clicking through always lands on live data.
 
+// Dot colours follow the kind-of-thing taxonomy (src/lib/kindTaxonomy.js):
+// finance teal · maintenance blue · compliance violet · tenant cyan ·
+// booking pink · contractor orange · property indigo · message lime.
+// Status (overdue etc.) stays in the label text — never in the dot colour.
 const KIND_META = {
-  rent: { label: "Rent", dot: "bg-emerald-500" },
-  bill: { label: "Bills", dot: "bg-slate-400" },
-  maintenance: { label: "Maintenance", dot: "bg-blue-500" },
-  service: { label: "Service due", dot: "bg-amber-500" },
-  warranty: { label: "Warranty", dot: "bg-amber-500" },
-  compliance: { label: "Compliance", dot: "bg-rose-500" },
-  tenancy: { label: "Tenancy", dot: "bg-[hsl(var(--navy))]" },
-  booking: { label: "Short let", dot: "bg-violet-500" },
+  rent: { label: "Rent", dot: "bg-teal-500", hex: "#14b8a6" },
+  bill: { label: "Bills", dot: "bg-teal-500", hex: "#14b8a6" },
+  maintenance: { label: "Maintenance", dot: "bg-blue-500", hex: "#3b82f6" },
+  service: { label: "Service due", dot: "bg-blue-500", hex: "#3b82f6" },
+  warranty: { label: "Warranty", dot: "bg-blue-500", hex: "#3b82f6" },
+  compliance: { label: "Compliance", dot: "bg-violet-500", hex: "#8b5cf6" },
+  tenancy: { label: "Tenancy", dot: "bg-cyan-500", hex: "#06b6d4" },
+  booking: { label: "Short let", dot: "bg-pink-500", hex: "#ec4899" },
+  contractor: { label: "Contractor", dot: "bg-orange-500", hex: "#f97316" },
+  task: { label: "Task", dot: "bg-indigo-500", hex: "#6366f1" },
+  message: { label: "Message", dot: "bg-lime-500", hex: "#84cc16" },
 };
 
 export { KIND_META };
 
-export function buildPropertyEvents({ propertyId, bills = [], tickets = [], compliance = [], equipment = [], tenancies = [], tenants = [], properties = [], shortLets = [] }) {
+export function buildPropertyEvents({ propertyId, bills = [], tickets = [], compliance = [], equipment = [], tenancies = [], tenants = [], properties = [], shortLets = [], tasks = [] }) {
   const events = [];
   const forProp = (list) => (propertyId ? list.filter((x) => x.property_id === propertyId) : list);
   const propName = (id) => properties.find((p) => p.id === id)?.name;
@@ -139,6 +146,27 @@ export function buildPropertyEvents({ propertyId, bills = [], tickets = [], comp
         sourceId: b.id,
       });
     }
+  }
+
+  // Tasks: only manual / page-created ones. Auto-derived tasks mirror records
+  // that already have their own dot above (ticket appointments, compliance
+  // expiries, rent bills) — plotting both would double every date.
+  for (const t of forProp(tasks)) {
+    if (!t.due_date || t.status === "Done") continue;
+    if (String(t.source || "manual").startsWith("auto:")) continue;
+    const kindByCategory = {
+      Maintenance: "maintenance", Compliance: "compliance", Rent: "rent",
+      Contractor: "contractor", General: "task",
+    };
+    events.push({
+      id: `task_${t.id}`,
+      date: t.due_date.slice(0, 10),
+      kind: kindByCategory[t.category] || "task",
+      label: t.title || "Task",
+      sub: propName(t.property_id),
+      to: "/tasks",
+      sourceId: t.id,
+    });
   }
 
   return events.sort((a, b) => a.date.localeCompare(b.date));
