@@ -183,14 +183,7 @@ export default function Tenants() {
                     </div>
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0 ${statusColor(t.payment_status)}`}>{t.payment_status || "—"}</span>
                   </Link>
-                  <Link
-                    to={`/whatsapp?tenant=${t.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={`WhatsApp ${t.name}`}
-                    className="p-2 rounded-lg hover:bg-muted active:scale-[0.98] transition-all shrink-0"
-                  >
-                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                  </Link>
+                  <ContactIcons tenant={t} />
                 </div>
               );
             })}
@@ -208,7 +201,7 @@ export default function Tenants() {
                     <th className="text-right px-4 py-3 font-medium">Rent</th>
                     <th className="text-left px-4 py-3 font-medium">Payment</th>
                     <th className="text-left px-4 py-3 font-medium">Consent</th>
-                    <th className="px-4 py-3"><span className="sr-only">WhatsApp</span></th>
+                    <th className="px-4 py-3"><span className="sr-only">Contact</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -226,19 +219,19 @@ export default function Tenants() {
                           </Link>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground"><PropertyLink property={prop} /></td>
-                        <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{formatDate(t.tenancy_start)} → {formatDate(t.tenancy_end)}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                          {formatDate(t.tenancy_start)} → {t.tenancy_end ? formatDate(t.tenancy_end) : <span className="text-[hsl(var(--sage))] font-medium">Periodic</span>}
+                        </td>
                         <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">{formatGBP(t.rent_amount)}</td>
-                        <td className="px-4 py-3"><span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor(t.payment_status)}`}>{t.payment_status || "—"}</span></td>
-                        <td className="px-4 py-3"><span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${consentChip(t.consent_status)}`}>{t.consent_status || "—"}</span></td>
                         <td className="px-4 py-3">
-                          <Link
-                            to={`/whatsapp?tenant=${t.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label={`WhatsApp ${t.name}`}
-                            className="p-1.5 rounded-lg hover:bg-muted inline-block active:scale-[0.98] transition-all"
-                          >
-                            <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                          </Link>
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor(t.payment_status)}`}>{t.payment_status || "—"}</span>
+                          {rentOverdueDays(t) != null && (
+                            <span className="block text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-0.5">{rentOverdueDays(t)}d overdue</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3"><span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${consentChip(t.consent_status)}`}>{t.consent_status || "—"}</span></td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <ContactIcons tenant={t} />
                         </td>
                       </tr>
                     );
