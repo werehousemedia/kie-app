@@ -1,0 +1,44 @@
+{
+  "name": "WorkspaceInvite",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace the invitee will join."
+    },
+    "email": {
+      "type": "string",
+      "description": "Invitee's email (lowercase). Matched against the signing-in user by workspace_bootstrap."
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "editor",
+        "viewer"
+      ],
+      "default": "editor",
+      "description": "Access level granted on acceptance. Viewer is read-only."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "revoked"
+      ],
+      "default": "pending"
+    },
+    "invited_by": {
+      "type": "string",
+      "description": "Email of the workspace owner who sent the invite."
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "email"
+  ]
+}
