@@ -17,6 +17,7 @@ import {
   Moon,
   Sun,
   Eye,
+  Palmtree,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -34,6 +35,7 @@ const PAGES = [
   { label: "Overview", to: "/", icon: LayoutDashboard },
   { label: "Properties", to: "/properties", icon: Building2 },
   { label: "Tenants", to: "/tenants", icon: Users },
+  { label: "Short lets", to: "/shortlets", icon: Palmtree },
   { label: "Inbox / WhatsApp", to: "/whatsapp", icon: MessageSquare },
   { label: "Finance & Bills", to: "/finance", icon: Wallet },
   { label: "Maintenance", to: "/maintenance", icon: Wrench },
@@ -50,6 +52,7 @@ const ACTIONS = [
   { label: "Create maintenance job", to: "/maintenance?new=1" },
   { label: "Add bill", to: "/finance?new=1" },
   { label: "Add compliance record", to: "/compliance?new=1" },
+  { label: "Add short-let booking", to: "/shortlets?new=1" },
 ];
 
 // Global search + actions. ⌘K / Ctrl+K everywhere, search icon on mobile.
