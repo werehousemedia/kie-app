@@ -16,6 +16,8 @@ import {
   Moon,
   Eye,
   Palmtree,
+  CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
@@ -37,6 +39,8 @@ const TABS = [
 ];
 
 const MORE_LINKS = [
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
+  { to: "/tasks", label: "Open Tasks", icon: ClipboardList, badgeKey: "tasks" },
   { to: "/tenants", label: "Tenants", icon: Users },
   { to: "/shortlets", label: "Short lets", icon: Palmtree },
   { to: "/maintenance", label: "Maintenance", icon: Wrench, badgeKey: "tickets" },
@@ -65,11 +69,12 @@ function TabBadge({ count, critical }) {
 export default function MobileTabBar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
-  const { conversations, tickets, compliance } = useKieData();
+  const { conversations, tickets, compliance, tasks } = useKieData();
   const { hideDemo, setHideDemo } = useDemoFilter();
   const { resolvedTheme, setTheme } = useTheme();
 
   const badges = {
+    tasks: tasks.filter((t) => t.status !== "Done").length,
     unread: conversations.reduce((n, c) => n + (c.unread_count || 0), 0),
     tickets: tickets.filter((t) => t.status !== "Complete" && t.status !== "Cancelled").length,
     compliance: compliance.filter((c) => {
