@@ -16,6 +16,7 @@ import {
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
 import { formatGBP, formatDate, formatDateTime, urgencyColor, statusColor, logActivity, matchContractors } from "@/lib/kieUtils";
+import { runTaskEngine } from "@/lib/taskUtils";
 import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import { ListSkeleton } from "@/components/shared/Skeletons";
