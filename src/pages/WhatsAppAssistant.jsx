@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { FileSpreadsheet, Megaphone, FlaskConical } from "lucide-react";
+import { FileSpreadsheet, Megaphone, FlaskConical, Play } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
 import { logActivity, matchContractors } from "@/lib/kieUtils";
@@ -15,6 +15,7 @@ import PropertyIntelligence from "@/components/whatsapp/PropertyIntelligence";
 import ConnectionCard from "@/components/whatsapp/ConnectionCard";
 import TestMessageModal from "@/components/whatsapp/TestMessageModal";
 import BroadcastModal from "@/components/whatsapp/BroadcastModal";
+import DemoScenarioModal from "@/components/whatsapp/DemoScenarioModal";
 
 const sevFromUrgency = (u) => (u === "emergency" || u === "high" ? "critical" : u === "medium" ? "warning" : "info");
 
@@ -37,6 +38,7 @@ export default function WhatsAppAssistant() {
   const [hiringId, setHiringId] = useState(null);
   const [loggingSheet, setLoggingSheet] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [commsSheetId, setCommsSheetId] = useState(null);
 
@@ -426,10 +428,17 @@ export default function WhatsAppAssistant() {
             </button>
             <button
               onClick={() => setTestOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-1.5 px-3 py-2 border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
             >
               <FlaskConical className="w-4 h-4" />
               <span className="hidden sm:inline">Test message</span>
+            </button>
+            <button
+              onClick={() => setDemoOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <Play className="w-4 h-4" />
+              <span className="hidden sm:inline">Demo</span>
             </button>
           </>
         }
@@ -487,6 +496,12 @@ export default function WhatsAppAssistant() {
       <TestMessageModal
         open={testOpen}
         onClose={() => setTestOpen(false)}
+        tenants={tenants}
+        onResult={onTestResult}
+      />
+      <DemoScenarioModal
+        open={demoOpen}
+        onClose={() => setDemoOpen(false)}
         tenants={tenants}
         onResult={onTestResult}
       />
