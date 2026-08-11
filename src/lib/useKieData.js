@@ -22,13 +22,14 @@ import { useDemoFilter } from "@/lib/DemoFilterContext";
 const DEMO_FILTERED = [
   "properties", "units", "tenants", "equipment", "conversations",
   "messages", "triages", "tickets", "compliance", "bills",
-  "transactions", "activity", "tenancies",
+  "transactions", "activity", "tenancies", "shortLets",
 ];
 
 const EMPTY = {
   properties: [], units: [], tenants: [], equipment: [], conversations: [],
   messages: [], triages: [], tickets: [], contractors: [], compliance: [],
   bills: [], transactions: [], activity: [], integrationLogs: [], tenancies: [],
+  shortLets: [],
 };
 
 const SOURCES = {
@@ -47,6 +48,7 @@ const SOURCES = {
   activity: () => base44.entities.ActivityEvent.list("-timestamp", 200),
   integrationLogs: () => base44.entities.IntegrationLog.list("-timestamp", 100),
   tenancies: () => base44.entities.Tenancy.list(),
+  shortLets: () => base44.entities.ShortLetBooking.list("-check_in", 200),
 };
 
 const TTL_MS = 30_000;
