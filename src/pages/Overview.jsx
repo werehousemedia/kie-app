@@ -26,7 +26,7 @@ import EmptyState from "@/components/shared/EmptyState";
 import { PageSkeleton } from "@/components/shared/Skeletons";
 import { TenantAvatar } from "@/components/shared/TenantChip";
 import DateRangePicker from "@/components/shared/DateRangePicker";
-import { DateRangeProvider, useDateRange } from "@/lib/DateRangeContext";
+import { useDateRange } from "@/lib/DateRangeContext";
 import { inRange, computeDelta } from "@/lib/dateRangePresets";
 
 const greeting = () => {
@@ -62,15 +62,9 @@ function SectionCard({ title, to, toLabel, children }) {
   );
 }
 
+// DateRangeProvider now lives in AppLayout so the picked range is shared by
+// every page (Overview, Calendar, Short lets, Tasks).
 export default function Overview() {
-  return (
-    <DateRangeProvider>
-      <OverviewContent />
-    </DateRangeProvider>
-  );
-}
-
-function OverviewContent() {
   const navigate = useNavigate();
   const data = useKieData();
   const { range, compare, compareMode } = useDateRange();
