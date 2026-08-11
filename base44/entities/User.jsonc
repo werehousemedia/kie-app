@@ -7,6 +7,33 @@
         "admin",
         "user"
       ]
+    },
+    "workspace_id": {
+      "type": "string",
+      "description": "The workspace whose records this user can see. Assigned ONLY by the workspace_bootstrap function (service role); field-level RLS blocks users from setting it themselves via auth.updateMe.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "workspace_role": {
+      "type": "string",
+      "enum": [
+        "owner",
+        "editor",
+        "viewer"
+      ],
+      "description": "Role within the workspace. Assigned ONLY by workspace_bootstrap; write-protected like workspace_id.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [
