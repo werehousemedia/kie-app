@@ -287,48 +287,15 @@ export default function Compliance() {
         ))}
       </div>
 
-      {/* Per-property RAG board */}
-      <div className="rounded-xl border bg-card">
-        <div className="px-4 pt-4 pb-2 flex items-center gap-1.5">
-          <ShieldAlert className="w-4 h-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Property health board</h2>
-        </div>
-        <div className="divide-y divide-border">
-          {board.map(({ property, rows, worst }) => (
-            <div key={property.id} className="px-4 py-3">
-              <div className="flex items-center gap-2">
-                <PropertyLink property={property} className="text-sm font-medium" />
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${RAG_TINT[worst]}`}>
-                  {rows.length === 0 ? "No records" : worst}
-                </span>
-              </div>
-              {rows.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {rows.map((r) => {
-                    const d = daysUntil(r.expiry_date);
-                    const label =
-                      r.computed === "Missing" || d == null
-                        ? `${r.category} · missing`
-                        : d < 0
-                          ? `${r.category} · ${Math.abs(d)}d overdue`
-                          : `${r.category} · ${d}d`;
-                    return (
-                      <button
-                        key={r.id}
-                        onClick={() => { setFilter(r.computed); setText(r.category); }}
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80 transition-opacity ${RAG_TINT[r.computed]}`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <Tabs defaultValue="records" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="records">Certificates</TabsTrigger>
+          <TabsTrigger value="prs">PRS Database readiness</TabsTrigger>
+        </TabsList>
+        <TabsContent value="records" className="space-y-4 mt-0">
 
+      {/* Live certificate table sits directly under the status cards; the
+          per-property health board follows it. */}
       <div className="relative sm:max-w-xs">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
@@ -469,6 +436,61 @@ export default function Compliance() {
         </>
       )}
 
+      {/* Per-property RAG board — below the live table */}
+      <div className="rounded-xl border bg-card">
+        <div className="px-4 pt-4 pb-2 flex items-center gap-1.5">
+          <ShieldAlert className="w-4 h-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Property health board</h2>
+        </div>
+        <div className="divide-y divide-border">
+          {board.map(({ property, rows, worst }) => (
+            <div key={property.id} className="px-4 py-3">
+              <div className="flex items-center gap-2">
+                <PropertyLink property={property} className="text-sm font-medium" />
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${RAG_TINT[worst]}`}>
+                  {rows.length === 0 ? "No records" : worst}
+                </span>
+              </div>
+              {rows.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {rows.map((r) => {
+                    const d = daysUntil(r.expiry_date);
+                    const label =
+                      r.computed === "Missing" || d == null
+                        ? `${r.category} · missing`
+                        : d < 0
+                          ? `${r.category} · ${Math.abs(d)}d overdue`
+                          : `${r.category} · ${d}d`;
+                    return (
+                      <button
+                        key={r.id}
+                        onClick={() => { setFilter(r.computed); setText(r.category); }}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80 transition-opacity ${RAG_TINT[r.computed]}`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+        </TabsContent>
+        <TabsContent value="prs" className="mt-0">
+          <PRSReadinessPanel
+            properties={properties}
+            compliance={compliance}
+            tenancies={tenancies}
+            tenants={tenants}
+            prsRegistrations={prsRegistrations}
+            reload={reload}
+          />
+        </TabsContent>
+      </Tabs>
+
       <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden" onChange={handleFile} />
 
       <AddRecordModal
@@ -476,6 +498,14 @@ export default function Compliance() {
         onClose={() => setAddOpen(false)}
         properties={properties}
         reload={reload}
+      />
+
+      <BookContractorDialog
+        task={bookingTask}
+        properties={properties}
+        contractors={contractors}
+        onClose={() => setBookingTask(null)}
+        onBooked={() => { setBookingTask(null); reload(); }}
       />
     </div>
   );
