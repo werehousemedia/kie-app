@@ -41,7 +41,7 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ ok: true, skipped: "ran recently" });
     }
 
-    const [tasks, tickets, compliance, bills, conversations, messages, properties, tenancies] =
+    const [tasks, tickets, compliance, bills, conversations, messages, properties, tenancies, servedIncreases] =
       (await Promise.all([
         db.Task.list("-created_date", 500),
         db.MaintenanceTicket.list("-created_date", 500),
@@ -51,6 +51,7 @@ export default async function (req: Request): Promise<Response> {
         db.Message.list("-timestamp", 1000),
         db.Property.list(),
         db.Tenancy.list(),
+        db.RentIncreaseNotice.filter({ status: "Served" }),
       ])) as Rec[][];
 
     const propName = (id?: string) => properties.find((p) => p.id === id)?.name || "property";
@@ -235,6 +236,36 @@ export default async function (req: Request): Promise<Response> {
       });
     }
 
+    // ---- Apply Section 13 rent increases that have reached their effective date
+    const todayStr = new Date().toISOString().slice(0, 10);
+    let increasesApplied = 0;
+    for (const n of servedIncreases) {
+      if (!n.effective_date || n.effective_date.slice(0, 10) > todayStr) continue;
+      const ty = tenancies.find((t) => t.id === n.tenancy_id);
+      if (ty) {
+        await db.Tenancy.update(ty.id, {
+          rent_amount: n.new_amount,
+          rent_history: [...(ty.rent_history || []), { date: n.effective_date.slice(0, 10), amount: n.new_amount }],
+        });
+        if (n.tenant_id) {
+          try { await db.Tenant.update(n.tenant_id, { rent_amount: n.new_amount }); } catch { /* denormalised copy only */ }
+        }
+      }
+      await db.RentIncreaseNotice.update(n.id, { status: "Effective" });
+      increasesApplied++;
+      await db.ActivityEvent.create({
+        property_id: n.property_id,
+        tenant_id: n.tenant_id,
+        event_type: "Rent reminder",
+        description: `Section 13 rent increase now effective: £${Math.round(n.new_amount)}/mo from ${n.effective_date.slice(0, 10)}`,
+        severity: "info",
+        related_id: n.id,
+        timestamp: new Date().toISOString(),
+        source: "task_engine",
+        is_demo: !!n.is_demo,
+      });
+    }
+
     const nowIso = new Date().toISOString();
     if (lastRunSetting) {
       await db.AppSetting.update(lastRunSetting.id, { value: nowIso });
@@ -242,7 +273,7 @@ export default async function (req: Request): Promise<Response> {
       await db.AppSetting.create({ key: "task_engine_last_run", value: nowIso });
     }
 
-    return Response.json({ ok: true, created, completed });
+    return Response.json({ ok: true, created, completed, increasesApplied });
   } catch (_error) {
     return Response.json({ ok: false });
   }
