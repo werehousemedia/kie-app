@@ -37,6 +37,18 @@ export const timeAgo = (dateStr) => {
   return formatDate(dateStr);
 };
 
+// wa.me deep link — UK numbers normalised to international format.
+export const waMeLink = (phone) => {
+  if (!phone) return null;
+  let digits = String(phone).replace(/[^0-9]/g, "");
+  if (digits.startsWith("0")) digits = "44" + digits.slice(1);
+  else if (digits.length === 10 && digits.startsWith("7")) digits = "44" + digits;
+  return `https://wa.me/${digits}`;
+};
+
+export const gmailComposeLink = (email) =>
+  email ? `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}` : null;
+
 export const daysUntil = (dateStr) => {
   if (!dateStr) return null;
   const d = new Date(dateStr);
