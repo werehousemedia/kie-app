@@ -8,7 +8,19 @@
     "description": {
       "type": "string"
     },
-    "priority": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "Maintenance",
+        "Compliance",
+        "Rent",
+        "Contractor",
+        "General"
+      ],
+      "default": "General",
+      "description": "What kind of work this is \u2014 drives the kind-of-thing colour taxonomy."
+    },
+    "urgency": {
       "type": "string",
       "enum": [
         "low",
@@ -21,28 +33,15 @@
     "status": {
       "type": "string",
       "enum": [
-        "to_do",
-        "in_progress",
-        "awaiting_action",
-        "complete",
-        "deferred"
+        "Open",
+        "In progress",
+        "Done"
       ],
-      "default": "to_do"
+      "default": "Open"
     },
-    "related_type": {
+    "due_date": {
       "type": "string",
-      "enum": [
-        "compliance",
-        "maintenance",
-        "rent",
-        "enquiry",
-        "contractor",
-        "changeover"
-      ]
-    },
-    "related_id": {
-      "type": "string",
-      "description": "ID of the source record this task resolves into (e.g. MaintenanceTicket id)."
+      "format": "date"
     },
     "property_id": {
       "type": "string",
@@ -54,11 +53,33 @@
     },
     "contractor_id": {
       "type": "string",
-      "description": "Reference to Contractor (optional \u2014 relevant for maintenance tasks)."
+      "description": "Reference to Contractor (optional \u2014 set when a contractor is booked)."
     },
-    "due_date": {
+    "source": {
       "type": "string",
-      "format": "date-time"
+      "default": "manual",
+      "description": "Where the task came from: manual, auto:maintenance, auto:compliance, auto:rent, auto:enquiry, compliance_page."
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "MaintenanceTicket",
+        "ComplianceRecord",
+        "Bill",
+        "Conversation",
+        "ShortLetBooking",
+        "Manual"
+      ],
+      "default": "Manual",
+      "description": "Entity type of the record that spawned this task (back-reference)."
+    },
+    "source_id": {
+      "type": "string",
+      "description": "ID of the record that spawned this task (back-reference)."
+    },
+    "source_key": {
+      "type": "string",
+      "description": "Idempotency key for auto-created tasks, e.g. maintenance:<ticket_id>. The task engine never creates two tasks with the same key."
     },
     "completed_at": {
       "type": "string",
@@ -67,15 +88,11 @@
     "is_demo": {
       "type": "boolean",
       "default": false
-    },
-    "source": {
-      "type": "string",
-      "default": "manual"
     }
   },
   "required": [
     "title",
-    "related_type",
+    "category",
     "property_id"
   ]
 }
