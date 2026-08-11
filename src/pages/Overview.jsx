@@ -14,13 +14,12 @@ import {
   Plus,
   Send,
   Banknote,
-  CalendarDays,
   Upload,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
-import { buildPropertyEvents, KIND_META } from "@/lib/calendarEvents";
-import { formatGBP, formatDate, daysUntil, urgencyColor, statusColor, timeAgo } from "@/lib/kieUtils";
+import { buildPropertyEvents } from "@/lib/calendarEvents";
+import { formatGBP, daysUntil, urgencyColor, statusColor, timeAgo } from "@/lib/kieUtils";
 import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import { PageSkeleton } from "@/components/shared/Skeletons";
