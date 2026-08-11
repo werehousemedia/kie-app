@@ -54,7 +54,7 @@ export default function Overview() {
   const data = useKieData();
   const {
     properties, tenants, bills, tickets, compliance, conversations,
-    tenancies, equipment, units, loading, reload,
+    tenancies, equipment, units, shortLets, loading, reload,
   } = data;
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState(null);
@@ -132,11 +132,11 @@ export default function Overview() {
   }, [bills, tickets, tenancies, tenants, properties, units]);
 
   const upcomingEvents = useMemo(() => {
-    const events = buildPropertyEvents({ propertyId: null, bills, tickets, compliance, equipment, tenancies, tenants, properties });
+    const events = buildPropertyEvents({ propertyId: null, bills, tickets, compliance, equipment, tenancies, tenants, properties, shortLets });
     const today = new Date().toISOString().slice(0, 10);
     const end = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
     return events.filter((e) => e.date >= today && e.date <= end).slice(0, 8);
-  }, [bills, tickets, compliance, equipment, tenancies, tenants, properties]);
+  }, [bills, tickets, compliance, equipment, tenancies, tenants, properties, shortLets]);
 
   const attention = useMemo(() => {
     const items = [];
