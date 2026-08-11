@@ -1,0 +1,14 @@
+{
+  "name": "task_engine",
+  "entry": "entry.ts",
+  "automations": [
+    {
+      "type": "scheduled",
+      "name": "daily_task_engine",
+      "description": "Derive open Tasks from maintenance, compliance, rent and stale WhatsApp enquiries every morning",
+      "schedule_mode": "recurring",
+      "schedule_type": "cron",
+      "cron_expression": "30 6 * * *"
+    }
+  ]
+}
