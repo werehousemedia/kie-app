@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -12,6 +12,7 @@ import { kindMeta, taskKind } from "@/lib/kindTaxonomy";
 import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import BookContractorDialog from "@/components/shared/BookContractorDialog";
+import TaskDetailSheet from "@/components/shared/TaskDetailSheet";
 import { ListSkeleton } from "@/components/shared/Skeletons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,15 @@ export default function OpenTasks() {
   const [contractorId, setContractorId] = useState("all");
   const [groupBy, setGroupBy] = useState("none");
   const [bookingTask, setBookingTask] = useState(null);
+  const [selectedId, setSelectedId] = useState(params.get("task") || null);
   const [sweeping, setSweeping] = useState(false);
+
+  // Deep link: /tasks?task=<id> opens the detail sheet (used by calendar +
+  // notifications). Re-sync if the param changes while mounted.
+  useEffect(() => {
+    const id = params.get("task");
+    if (id) setSelectedId(id);
+  }, [params]);
 
   const propName = (id) => properties.find((p) => p.id === id)?.name || "—";
   const contractorName = (id) => contractors.find((c) => c.id === id)?.name;
@@ -224,10 +233,18 @@ export default function OpenTasks() {
                 {g.rows.map((t) => {
                   const meta = kindMeta(taskKind(t));
                   return (
-                    <tr key={t.id} className="border-b last:border-b-0 hover:bg-muted/40 transition-colors">
+                    <tr
+                      key={t.id}
+                      onClick={() => setSelectedId(t.id)}
+                      className="border-b last:border-b-0 hover:bg-muted/40 transition-colors cursor-pointer"
+                    >
                       <td className={cn("px-4 py-2.5 border-l-[3px]", meta.border)}>
                         <p className="font-medium text-foreground leading-snug line-clamp-2 max-w-[320px]">{t.title}</p>
-                        <Link to={`/properties/${t.property_id}`} className="text-xs text-muted-foreground hover:underline">
+                        <Link
+                          to={`/properties/${t.property_id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs text-muted-foreground hover:underline"
+                        >
                           {propName(t.property_id)}
                         </Link>
                       </td>
@@ -242,7 +259,7 @@ export default function OpenTasks() {
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-xs"><DueCell task={t} /></td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                         <Select value={t.status} onValueChange={(v) => setTaskStatus(t, v)}>
                           <SelectTrigger className={cn("h-7 w-[120px] border-0 text-[11px] font-medium rounded-full px-2.5", statusPill(t.status))}>
                             <SelectValue />
@@ -265,7 +282,7 @@ export default function OpenTasks() {
                       <td className="px-3 py-2.5 text-right">
                         {t.status !== "Done" && (
                           <button
-                            onClick={() => setBookingTask(t)}
+                            onClick={(e) => { e.stopPropagation(); setBookingTask(t); }}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border bg-card hover:bg-muted text-xs font-medium transition-colors whitespace-nowrap"
                           >
                             <HardHat className="w-3.5 h-3.5" />
@@ -289,6 +306,13 @@ export default function OpenTasks() {
         contractors={contractors}
         onClose={() => setBookingTask(null)}
         onBooked={() => { setBookingTask(null); reload(); }}
+      />
+
+      <TaskDetailSheet
+        task={tasks.find((t) => t.id === selectedId) || null}
+        onClose={() => setSelectedId(null)}
+        onBook={(t) => setBookingTask(t)}
+        onStatusChange={setTaskStatus}
       />
     </div>
   );
