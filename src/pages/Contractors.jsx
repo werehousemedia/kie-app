@@ -232,8 +232,13 @@ export default function Contractors() {
       <ContractorFormModal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        /* eslint-disable-next-line react/jsx-no-duplicate-props */
         reload={reload}
+      />
+
+      <ImportContractorsModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={reload}
       />
     </div>
   );
