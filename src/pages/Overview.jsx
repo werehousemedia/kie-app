@@ -134,19 +134,26 @@ export default function Overview() {
 
   if (loading) return <PageSkeleton />;
 
+  // A workspace with nothing in it is a landlord who hasn't set up yet — send
+  // them to the wizard rather than an empty dashboard.
   if (properties.length === 0) {
     return (
       <div className="animate-fade-in">
         <PageHeader title={greeting()} subtitle="Let's get your portfolio set up" />
         <div className="mt-6 rounded-xl border bg-card">
           <EmptyState
-            icon={Upload}
-            title="No properties yet"
-            description="Import your portfolio from the Google Sheet in a couple of minutes — properties, tenants, rents and compliance all arrive together."
+            icon={Building2}
+            title="Welcome — let's add your first property"
+            description="Five short steps: properties, tenants, certificates, holiday-let calendars and your regular contractors. Everything saves as you go, and you can skip anything."
             action={
-              <Link to="/import" className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-                <Upload className="w-4 h-4" /> Import from sheet
-              </Link>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Link to="/onboarding" className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+                  Set up my portfolio <ChevronRight className="w-4 h-4" />
+                </Link>
+                <Link to="/import" className="inline-flex items-center gap-1.5 px-3.5 py-2 border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors">
+                  <Upload className="w-4 h-4" /> Import a spreadsheet
+                </Link>
+              </div>
             }
           />
         </div>
