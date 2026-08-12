@@ -63,7 +63,9 @@ function parseIcs(text: string): ParsedEvent[] {
     const end = icsDateToIso(get("DTEND"));
     const uid = get("UID");
     if (!start || !end || !uid) continue;
-    events.push({ uid, start, end, summary: get("SUMMARY") });
+    const summary = get("SUMMARY");
+    const description = get("DESCRIPTION").replace(/\\n/g, "\n").replace(/\\,/g, ",");
+    events.push({ uid, start, end, summary, description, ...enrich(summary, description) });
   }
   return events;
 }
@@ -126,19 +128,22 @@ export default async function (req: Request): Promise<Response> {
           skipped++;
           continue;
         }
-        const guest =
-          ev.summary && !/^reserved$/i.test(ev.summary) && !/airbnb/i.test(ev.summary)
-            ? ev.summary.slice(0, 80)
-            : null;
+        const notes = [
+          ev.reservationCode ? `Reservation ${ev.reservationCode}` : null,
+          ev.phoneLast4 ? `Guest phone ends ${ev.phoneLast4}` : null,
+        ].filter(Boolean).join(" · ") || undefined;
         await entities.ShortLetBooking.create({
           workspace_id: wsOf(feed.propertyId),
           property_id: feed.propertyId,
           platform: feed.platform,
-          guest_name: guest,
+          guest_name: ev.guestName,
+          guests_count: ev.guests || undefined,
           check_in: ev.start,
           check_out: ev.end,
           status: "Confirmed",
           external_id: ev.uid,
+          reservation_code: ev.reservationCode || undefined,
+          notes,
           is_demo: false,
           source: "ical",
         });
