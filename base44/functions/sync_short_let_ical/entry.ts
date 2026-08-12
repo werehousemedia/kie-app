@@ -6,71 +6,8 @@
 // default ImportTemplate's sync_secret (same convention as sync_from_sheet).
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { WS_FALLBACK } from "../../shared/workspace.ts";
+import { parseIcs, BLOCKED_PATTERNS } from "../../shared/icalParse.ts";
 
-type ParsedEvent = {
-  uid: string;
-  start: string; // YYYY-MM-DD
-  end: string;   // YYYY-MM-DD
-  summary: string;
-  description: string;
-  guestName: string | null;
-  reservationCode: string | null;
-  phoneLast4: string | null;
-  guests: number | null;
-};
-
-// What the platforms actually put in a calendar feed:
-//   Airbnb  — SUMMARY "Reserved" (sometimes the guest's first name), and a
-//             DESCRIPTION carrying "Reservation URL: .../HMXYZ123", "Phone
-//             Number (Last 4 Digits): 1234", occasionally "Guest: Jane".
-//   Booking.com — SUMMARY "CLOSED - Not available" for blocks, else the name.
-// No feed carries email, full phone or payout: that needs a partner API,
-// which neither platform grants small self-serve apps. Take what is really
-// there and leave the rest honestly empty.
-function enrich(summary: string, description: string) {
-  const text = summary + "\n" + description;
-  const code =
-    text.match(/reservation\s*(?:url|code)?[^A-Za-z0-9]{0,12}([A-Z0-9]{6,12})/i)?.[1] ||
-    text.match(/reservations?\/(?:details\/)?([A-Z0-9]{6,12})/i)?.[1] ||
-    null;
-  const phoneLast4 = text.match(/last\s*4\s*digits?\)?\s*:?\s*(\d{4})/i)?.[1] || null;
-  const guests = Number(text.match(/(\d+)\s*guests?/i)?.[1]) || null;
-  let guestName = text.match(/^\s*Guest\s*:\s*(.+)$/im)?.[1]?.trim() || null;
-  if (!guestName) {
-    const s = summary.trim();
-    const generic = /^(reserved|closed|not available|blocked|unavailable|busy|airbnb|booking)/i;
-    if (s && !generic.test(s)) guestName = s.replace(/\s*\(.*\)\s*$/, "").slice(0, 80);
-  }
-  return { guestName, reservationCode: code, phoneLast4, guests };
-}
-
-function icsDateToIso(v: string): string | null {
-  const m = v.trim().match(/^(\d{4})(\d{2})(\d{2})/);
-  return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
-}
-
-// Minimal, tolerant VEVENT parser — handles folded lines and DATE/DATE-TIME.
-function parseIcs(text: string): ParsedEvent[] {
-  const unfolded = text.replace(/\r\n[ \t]/g, "").replace(/\r/g, "");
-  const events: ParsedEvent[] = [];
-  for (const block of unfolded.split("BEGIN:VEVENT").slice(1)) {
-    const body = block.split("END:VEVENT")[0];
-    const get = (name: string): string => {
-      const m = body.match(new RegExp(`^${name}[^:\\n]*:(.*)$`, "m"));
-      return m ? m[1].trim() : "";
-    };
-    const start = icsDateToIso(get("DTSTART"));
-    const end = icsDateToIso(get("DTEND"));
-    const uid = get("UID");
-    if (!start || !end || !uid) continue;
-    const summary = get("SUMMARY");
-    const description = get("DESCRIPTION").replace(/\\n/g, "\n").replace(/\\,/g, ",");
-    events.push({ uid, start, end, summary, description, ...enrich(summary, description) });
-  }
-  return events;
-}
-
-const BLOCKED_PATTERNS = /not available|blocked|closed/i;
 
 export default async function (req: Request): Promise<Response> {
   try {
