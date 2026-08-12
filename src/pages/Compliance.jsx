@@ -514,6 +514,7 @@ export default function Compliance() {
         task={bookingTask}
         properties={properties}
         contractors={contractors}
+        tenants={tenants}
         onClose={() => setBookingTask(null)}
         onBooked={() => { setBookingTask(null); reload(); }}
       />
