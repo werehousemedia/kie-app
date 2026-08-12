@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
 import { formatGBP, formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
 import PageHeader from "@/components/shared/PageHeader";
+import ImportContractorsModal from "@/components/shared/ImportContractorsModal";
 import EmptyState from "@/components/shared/EmptyState";
 import { CardGridSkeleton } from "@/components/shared/Skeletons";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -56,6 +57,7 @@ export default function Contractors() {
   const [sortRisk, setSortRisk] = useState(false);
   const [openId, setOpenId] = useState(searchParams.get("contractor") || null);
   const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("new") === "1") {
@@ -115,12 +117,20 @@ export default function Contractors() {
         title="Contractors"
         subtitle={`${contractors.length} in your book · ${preferredCount} preferred`}
         actions={
-          <button
-            onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" /> Add contractor
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setImportOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+            >
+              <Upload className="w-4 h-4" /> Import
+            </button>
+            <button
+              onClick={() => setAddOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" /> Add contractor
+            </button>
+          </div>
         }
       />
 
@@ -222,6 +232,7 @@ export default function Contractors() {
       <ContractorFormModal
         open={addOpen}
         onClose={() => setAddOpen(false)}
+        /* eslint-disable-next-line react/jsx-no-duplicate-props */
         reload={reload}
       />
     </div>
