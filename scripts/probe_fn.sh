@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Temporary verification helper: does an edit to an EXISTING backend function
-# reach the deployed runtime? Prints the build marker from the response.
-SECRET="$1"
-curl -s -X POST "https://kie-app.base44.app/functions/handle_inbound_message" \
-  -H "Content-Type: application/json" \
-  -H "X-Sync-Secret: $SECRET" \
-  -d '{"phone":"07700900999","content":"Build marker check."}' \
-  -o /tmp/pipe.json
-python3 -c "import json;d=json.load(open('/tmp/pipe.json'));print('build =',repr(d.get('build')),'| err',d.get('error'))"
+# Temporary helper: try to force a redeploy of the existing backend functions
+# whose source has changed, then report what the CLI said.
+cd /app || exit 1
+echo "--- whoami ---"
+timeout 60 npx --yes base44@0.1.8 whoami 2>&1 | head -5
+echo "--- functions list ---"
+timeout 90 npx --yes base44@0.1.8 functions list --app-id 6a79fc5fc156dcc6d62c30ca 2>&1 | head -20
