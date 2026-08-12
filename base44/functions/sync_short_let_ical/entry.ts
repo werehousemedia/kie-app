@@ -12,7 +12,37 @@ type ParsedEvent = {
   start: string; // YYYY-MM-DD
   end: string;   // YYYY-MM-DD
   summary: string;
+  description: string;
+  guestName: string | null;
+  reservationCode: string | null;
+  phoneLast4: string | null;
+  guests: number | null;
 };
+
+// What the platforms actually put in a calendar feed:
+//   Airbnb  — SUMMARY "Reserved" (sometimes the guest's first name), and a
+//             DESCRIPTION carrying "Reservation URL: .../HMXYZ123", "Phone
+//             Number (Last 4 Digits): 1234", occasionally "Guest: Jane".
+//   Booking.com — SUMMARY "CLOSED - Not available" for blocks, else the name.
+// No feed carries email, full phone or payout: that needs a partner API,
+// which neither platform grants small self-serve apps. Take what is really
+// there and leave the rest honestly empty.
+function enrich(summary: string, description: string) {
+  const text = summary + "\n" + description;
+  const code =
+    text.match(/reservation\s*(?:url|code)?[^A-Za-z0-9]{0,12}([A-Z0-9]{6,12})/i)?.[1] ||
+    text.match(/reservations?\/(?:details\/)?([A-Z0-9]{6,12})/i)?.[1] ||
+    null;
+  const phoneLast4 = text.match(/last\s*4\s*digits?\)?\s*:?\s*(\d{4})/i)?.[1] || null;
+  const guests = Number(text.match(/(\d+)\s*guests?/i)?.[1]) || null;
+  let guestName = text.match(/^\s*Guest\s*:\s*(.+)$/im)?.[1]?.trim() || null;
+  if (!guestName) {
+    const s = summary.trim();
+    const generic = /^(reserved|closed|not available|blocked|unavailable|busy|airbnb|booking)/i;
+    if (s && !generic.test(s)) guestName = s.replace(/\s*\(.*\)\s*$/, "").slice(0, 80);
+  }
+  return { guestName, reservationCode: code, phoneLast4, guests };
+}
 
 function icsDateToIso(v: string): string | null {
   const m = v.trim().match(/^(\d{4})(\d{2})(\d{2})/);
