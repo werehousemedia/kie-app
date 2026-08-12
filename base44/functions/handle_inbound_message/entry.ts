@@ -226,6 +226,7 @@ export default async function(req: Request): Promise<Response> {
     });
 
     return Response.json({
+      build: "delivery-v2",
       conversation_id: conversation.id,
       triage,
       triage_error: triageError,
