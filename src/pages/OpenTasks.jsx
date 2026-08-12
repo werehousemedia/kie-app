@@ -43,7 +43,7 @@ const URGENCIES = ["low", "medium", "high", "emergency"];
 const URGENCY_RANK = { emergency: 0, high: 1, medium: 2, low: 3 };
 
 export default function OpenTasks() {
-  const { tasks, properties, contractors, loading, reload } = useKieData();
+  const { tasks, properties, contractors, tenants, loading, reload } = useKieData();
   const [params] = useSearchParams();
   const [status, setStatus] = useState(params.get("status") || "open");
   const [urgency, setUrgency] = useState(params.get("urgency") || "all");
@@ -304,6 +304,7 @@ export default function OpenTasks() {
         task={bookingTask}
         properties={properties}
         contractors={contractors}
+        tenants={tenants}
         onClose={() => setBookingTask(null)}
         onBooked={() => { setBookingTask(null); reload(); }}
       />
