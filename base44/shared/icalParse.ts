@@ -38,7 +38,10 @@ export function enrich(summary: string, description: string) {
     text.match(/reservations?\/(?:details\/)?([A-Z0-9]{6,12})/i)?.[1] ||
     null;
   const phoneLast4 = text.match(/last\s*4\s*digits?\)?\s*:?\s*(\d{4})/i)?.[1] || null;
-  const guests = Number(text.match(/(\d+)\s*guests?/i)?.[1]) || null;
+  // Stay on one line and refuse a following colon: without both, the phone
+  // digits in "(Last 4 Digits): 4471\nGuest: Priya" get read as a guest count,
+  // because "Guest" also satisfies /guests?/i.
+  const guests = Number(text.match(/(\d+)[ \t]*guests?\b(?!\s*:)/i)?.[1]) || null;
 
   let guestName: string | null = text.match(/^\s*Guest\s*:\s*(.+)$/im)?.[1]?.trim() || null;
   if (!guestName) {
