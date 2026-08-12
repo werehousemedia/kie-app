@@ -40,16 +40,19 @@ export function parseContractorLine(line) {
 
   // Infer the trade from the business name when it wasn't its own column —
   // "Kent Gas & Heat" is obviously a heating firm.
+  // Whole words only: "Sparkle Cleaning" is not an electrician, and "Heathrow
++  // Locks" is not a heating firm.
   if (!row.trade) {
-    const hay = `${row.name} ${row.coverage_area}`.toLowerCase();
-    if (/gas|boiler|heat/.test(hay)) row.trade = "Heating/Gas";
-    else if (/electric|spark/.test(hay)) row.trade = "Electrical";
-    else if (/plumb|drain/.test(hay)) row.trade = "Plumbing";
-    else if (/clean/.test(hay)) row.trade = "Cleaning";
-    else if (/roof|gutter/.test(hay)) row.trade = "Roofing";
-    else if (/lock/.test(hay)) row.trade = "Locksmith";
-    else if (/pest/.test(hay)) row.trade = "Pest control";
-    else if (/carpen|joiner/.test(hay)) row.trade = "Carpentry";
+    const hay = ` ${row.name} ${row.coverage_area} `.toLowerCase();
+    const has = (re) => re.test(hay);
+    if (has(/\b(gas|boiler|heating|plumb\w*\s*&?\s*heat\w*)\b/)) row.trade = "Heating/Gas";
+    else if (has(/\b(electric\w*|sparks?|sparky)\b/)) row.trade = "Electrical";
+    else if (has(/\b(plumb\w*|drain\w*)\b/)) row.trade = "Plumbing";
+    else if (has(/\b(clean\w*|housekeep\w*)\b/)) row.trade = "Cleaning";
+    else if (has(/\b(roof\w*|gutter\w*)\b/)) row.trade = "Roofing";
+    else if (has(/\b(locksmith\w*|locks)\b/)) row.trade = "Locksmith";
+    else if (has(/\b(pest|vermin)\b/)) row.trade = "Pest control";
+    else if (has(/\b(carpent\w*|joiner\w*)\b/)) row.trade = "Carpentry";
     else row.trade = "General";
   }
 
