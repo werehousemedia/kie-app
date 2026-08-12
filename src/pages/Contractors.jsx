@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Plus, Search, HardHat, Star, Phone, Mail, ShieldAlert, Trash2 } from "lucide-react";
+import { Plus, Search, HardHat, Star, Phone, Mail, ShieldAlert, Trash2, Upload } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useKieData } from "@/lib/useKieData";
 import { formatGBP, formatDate, daysUntil, statusColor, logActivity } from "@/lib/kieUtils";
