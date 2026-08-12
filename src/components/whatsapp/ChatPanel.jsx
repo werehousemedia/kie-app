@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { ArrowLeft, Info, Send, Sparkles, MessageSquare } from "lucide-react";
+import { ArrowLeft, Info, Send, Sparkles, MessageSquare, Check, CheckCheck, AlertCircle } from "lucide-react";
 import { TenantAvatar } from "@/components/shared/TenantChip";
 import EmptyState from "@/components/shared/EmptyState";
 import { formatDateTime } from "@/lib/kieUtils";
@@ -25,7 +25,7 @@ function Bubble({ msg }) {
   }
   const mine = msg.sender === "landlord";
   return (
-    <div className={`flex ${mine ? "justify-end" : "justify-start"} my-1 px-1`}>
+    <div className={`flex flex-col ${mine ? "items-end" : "items-start"} my-1 px-1`}>
       <div
         className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words ${
           mine
@@ -36,7 +36,26 @@ function Bubble({ msg }) {
       >
         {msg.content}
       </div>
+      {mine && <DeliveryTag delivery={msg.delivery} />}
     </div>
+  );
+}
+
+// Honest delivery state — a reply saved without a connected channel must not
+// look like one that reached the tenant's phone.
+function DeliveryTag({ delivery }) {
+  if (!delivery || delivery === "received") return null;
+  const map = {
+    delivered: { Icon: CheckCheck, text: "Delivered on WhatsApp", cls: "text-emerald-600 dark:text-emerald-400" },
+    logged: { Icon: Check, text: "Saved to thread — not sent", cls: "text-muted-foreground" },
+    failed: { Icon: AlertCircle, text: "Delivery failed", cls: "text-rose-600 dark:text-rose-400" },
+  };
+  const m = map[delivery];
+  if (!m) return null;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] mt-0.5 mr-1 ${m.cls}`}>
+      <m.Icon className="w-3 h-3" /> {m.text}
+    </span>
   );
 }
 
