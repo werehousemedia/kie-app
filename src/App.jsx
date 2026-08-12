@@ -27,6 +27,7 @@ import Compliance from '@/pages/Compliance';
 import Activity from '@/pages/Activity';
 import Integrations from '@/pages/Integrations';
 import ImportWizard from '@/pages/ImportWizard';
+import Onboarding from '@/pages/Onboarding';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -95,6 +96,7 @@ const AuthenticatedApp = () => {
           <Route path="/activity" element={<Activity />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/import" element={<ImportWizard />} />
+          <Route path="/onboarding" element={<Onboarding />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
