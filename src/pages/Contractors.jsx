@@ -60,6 +60,7 @@ export default function Contractors() {
   const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
+    if (searchParams.get("import") === "1") setImportOpen(true);
     if (searchParams.get("new") === "1") {
       setAddOpen(true);
       setSearchParams((p) => { p.delete("new"); return p; }, { replace: true });
