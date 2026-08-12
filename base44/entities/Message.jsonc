@@ -24,6 +24,16 @@
     "ai_triage_id": {
       "type": "string"
     },
+    "delivery": {
+      "type": "string",
+      "enum": [
+        "delivered",
+        "logged",
+        "failed",
+        "received"
+      ],
+      "description": "Outbound delivery state. 'delivered' = sent over the WhatsApp API; 'logged' = recorded in the thread only (no channel connected); 'failed' = the API rejected it; 'received' = inbound from the tenant."
+    },
     "is_demo": {
       "type": "boolean",
       "default": false
