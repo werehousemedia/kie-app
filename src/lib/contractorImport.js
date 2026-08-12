@@ -40,8 +40,7 @@ export function parseContractorLine(line) {
 
   // Infer the trade from the business name when it wasn't its own column —
   // "Kent Gas & Heat" is obviously a heating firm.
-  // Whole words only: "Sparkle Cleaning" is not an electrician, and "Heathrow
-+  // Locks" is not a heating firm.
+  // Whole words only: "Sparkle Cleaning" is not an electrician.
   if (!row.trade) {
     const hay = ` ${row.name} ${row.coverage_area} `.toLowerCase();
     const has = (re) => re.test(hay);
