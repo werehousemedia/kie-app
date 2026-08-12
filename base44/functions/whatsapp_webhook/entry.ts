@@ -11,16 +11,15 @@
 // Always answers POSTs with 200 quickly — Meta disables webhooks that error.
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { stampEntities, WS_FALLBACK } from "../../shared/workspace.ts";
+import { getWaSettings, sendWhatsApp } from "../../shared/whatsappSend.ts";
 
 const PIPELINE_URL = "https://kie-app.base44.app/functions/handle_inbound_message";
-const GRAPH_VERSION = "v21.0";
 
-async function getSettings(db: any): Promise<Record<string, string>> {
-  const rows = await db.AppSetting.filter({});
-  const out: Record<string, string> = {};
-  for (const r of rows) out[r.key] = r.value || "";
-  return out;
-}
+// Credentials belong to the app operator's workspace: one number serves every
+// landlord, and the pipeline routes each message to the right one by tenant
+// phone. Scoping the read prevents another workspace's AppSetting rows from
+// shadowing the real channel config.
+const getSettings = getWaSettings;
 
 async function validSignature(req: Request, body: string, appSecret: string): Promise<boolean> {
   const header = req.headers.get("x-hub-signature-256") || "";
@@ -31,24 +30,6 @@ async function validSignature(req: Request, body: string, appSecret: string): Pr
   const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
   const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
   return header.slice(7) === hex;
-}
-
-async function sendWhatsApp(settings: Record<string, string>, to: string, text: string): Promise<{ ok: boolean; detail: string }> {
-  if (!settings.wa_access_token || !settings.wa_phone_number_id) {
-    return { ok: false, detail: "wa_access_token / wa_phone_number_id not configured yet" };
-  }
-  const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${settings.wa_phone_number_id}/messages`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${settings.wa_access_token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to,
-      type: "text",
-      text: { preview_url: false, body: text.slice(0, 4000) },
-    }),
-  });
-  const detail = await res.text();
-  return { ok: res.ok, detail: res.ok ? "sent" : detail.slice(0, 300) };
 }
 
 export default async function(req: Request): Promise<Response> {
