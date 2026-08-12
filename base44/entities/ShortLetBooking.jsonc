@@ -53,9 +53,13 @@
       "type": "string",
       "description": "MaintenanceTicket booked for the post-checkout turnaround clean"
     },
+    "reservation_code": {
+      "type": "string",
+      "description": "Platform reservation reference parsed from the iCal feed (e.g. Airbnb HMXYZ123). Use it to find the booking on the platform."
+    },
     "external_id": {
       "type": "string",
-      "description": "iCal UID for imported bookings — dedupe key"
+      "description": "iCal UID for imported bookings \u2014 dedupe key"
     },
     "notes": {
       "type": "string"
