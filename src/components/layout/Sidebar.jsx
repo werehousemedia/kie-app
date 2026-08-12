@@ -16,6 +16,7 @@ import {
   Palmtree,
   CalendarDays,
   ClipboardList,
+  Rocket,
 } from "lucide-react";
 import { useKieData } from "@/lib/useKieData";
 import { daysUntil } from "@/lib/kieUtils";
@@ -154,6 +155,7 @@ export default function Sidebar() {
           <Item to="/activity" label="Activity" icon={Activity} />
           <Item to="/integrations" label="Integrations" icon={Settings} />
           <Item to="/import" label="Import data" icon={Upload} />
+          <Item to="/onboarding" label="Set up portfolio" icon={Rocket} />
         </Group>
       </nav>
       <div className="px-4 py-3 border-t border-[hsl(var(--sidebar-border))]">
