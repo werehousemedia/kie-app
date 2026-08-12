@@ -50,10 +50,12 @@ const PAGES = [
   { label: "Activity", to: "/activity", icon: Activity },
   { label: "Integrations", to: "/integrations", icon: Settings },
   { label: "Import data", to: "/import", icon: Upload },
+  { label: "Set up portfolio", to: "/onboarding", icon: Upload },
 ];
 
 const ACTIONS = [
   { label: "Add property", to: "/properties?new=1" },
+  { label: "Import my contractors", to: "/contractors?import=1" },
   { label: "Add tenant", to: "/tenants?new=1" },
   { label: "Create maintenance job", to: "/maintenance?new=1" },
   { label: "Add bill", to: "/finance?new=1" },
