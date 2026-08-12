@@ -31,11 +31,27 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // --- Resolve tenant + context ---
+    // One inbound number serves every landlord, so the sender's phone is what
+    // decides whose workspace this message lands in. Matching runs across all
+    // workspaces by design (service role) — nothing else can route it.
     const tenants = await db.Tenant.filter({ is_demo: { $ne: true } });
     const demoTenants = tenant_id ? await db.Tenant.filter({ id: tenant_id }) : [];
-    let tenant = tenant_id
-      ? (tenants.find((t: any) => t.id === tenant_id) || demoTenants[0] || null)
-      : tenants.find((t: any) => normalizePhone(t.phone) === normalizePhone(phone)) || null;
+    let tenant: any = null;
+    let ambiguous: any[] = [];
+    if (tenant_id) {
+      tenant = tenants.find((t: any) => t.id === tenant_id) || demoTenants[0] || null;
+    } else {
+      const wanted = normalizePhone(phone);
+      const matches = tenants.filter((t: any) => normalizePhone(t.phone) === wanted);
+      if (matches.length > 1) {
+        // Same number registered by two landlords: pick the most recently
+        // updated tenancy and flag it rather than guessing silently.
+        ambiguous = matches;
+        matches.sort((a: any, b: any) =>
+          String(b.updated_date || b.created_date || "").localeCompare(String(a.updated_date || a.created_date || "")));
+      }
+      tenant = matches[0] || null;
+    }
     if (!tenant) return Response.json({ error: "Tenant not found." }, { status: 404 });
 
     // Everything this pipeline creates belongs to the tenant's workspace.
@@ -72,8 +88,19 @@ export default async function(req: Request): Promise<Response> {
       sender: "tenant",
       content,
       timestamp: now,
+      delivery: "received",
       is_demo: !!tenant.is_demo,
     });
+
+    if (ambiguous.length > 1) {
+      await db.IntegrationLog.create({
+        service: "WhatsApp",
+        event: "Ambiguous sender",
+        status: "pending",
+        details: `${phone} matches ${ambiguous.length} tenants across workspaces — routed to ${tenant.name}. Ask the other landlord to correct the number.`,
+        timestamp: now,
+      });
+    }
 
     // --- AI triage (never let an LLM failure kill the pipeline) ---
     let triage: any = null;
@@ -109,12 +136,15 @@ export default async function(req: Request): Promise<Response> {
 
     // --- Auto-reply to the tenant ---
     const replyText = triage?.suggested_reply || fallbackReply(tenant.name, property?.name);
+    // The webhook delivers this over the Graph API and is the only caller that
+    // knows whether it landed; "logged" is the honest default for test sends.
     await db.Message.create({
       conversation_id: conversation.id,
       sender: "ai",
       content: replyText,
       timestamp: new Date().toISOString(),
       ai_triage_id: triageRecord?.id,
+      delivery: "logged",
       is_demo: !!tenant.is_demo,
     });
 
