@@ -160,19 +160,48 @@ export default function WhatsAppAssistant() {
     return matchContractors(contractors, triage.issue_type, property?.postcode || "");
   }, [triage, contractors, property]);
 
+  // Landlord replies go through send_whatsapp so they actually reach the
+  // tenant when the channel is connected. When it isn't (or Meta's 24h reply
+  // window has closed) the message is still recorded and the user is handed a
+  // prefilled wa.me link — never a silent "sent" that went nowhere.
   const sendMessage = async (content, sender = "landlord") => {
     const now = new Date().toISOString();
-    await base44.entities.Message.create({
+    if (sender !== "landlord") {
+      await base44.entities.Message.create({
+        conversation_id: conversation.id,
+        sender,
+        content,
+        timestamp: now,
+        delivery: "logged",
+      });
+      await base44.entities.Conversation.update(conversation.id, {
+        last_message: content,
+        last_message_at: now,
+      });
+      return { delivered: false };
+    }
+
+    const res = await base44.functions.invoke("send_whatsapp", {
       conversation_id: conversation.id,
-      sender,
       content,
-      timestamp: now,
     });
-    await base44.entities.Conversation.update(conversation.id, {
-      last_message: content,
-      last_message_at: now,
-      ...(sender === "landlord" ? { unread_count: 0 } : {}),
-    });
+    const d = res?.data || {};
+    if (d.error) throw new Error(d.error);
+
+    if (d.delivered) {
+      toast.success("Delivered on WhatsApp");
+    } else if (d.wa_link) {
+      toast.warning(
+        d.not_configured
+          ? "Saved to the thread — WhatsApp isn't connected yet"
+          : `Not delivered: ${d.detail}`,
+        {
+          duration: 9000,
+          action: { label: "Open WhatsApp", onClick: () => window.open(d.wa_link, "_blank", "noopener") },
+        }
+      );
+    }
+    return d;
   };
 
   const handleSend = async (text) => {
