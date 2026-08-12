@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Temporary verification helper: is a named backend function live on the
-# published host vs the sandbox host? Distinguishes "deployed" from "unknown"
-# by comparing against a name that definitely does not exist.
-PROD="https://kie-app.base44.app/functions"
-for f in send_whatsapp zz_no_such_fn_abc; do
-  code=$(curl -s -o /tmp/out.$f -w "%{http_code}" -X POST "$PROD/$f" -H "Content-Type: application/json" -d '{}')
-  printf "%s -> %s | %s\n" "$f" "$code" "$(head -c 70 /tmp/out.$f | tr -d '\n')"
-done
+# Temporary verification helper: fire one inbound message through the live
+# pipeline and print just the conversation id, so we can inspect what the
+# function wrote.
+SECRET="$1"
+curl -s -X POST "https://kie-app.base44.app/functions/handle_inbound_message" \
+  -H "Content-Type: application/json" \
+  -H "X-Sync-Secret: $SECRET" \
+  -d '{"phone":"07700900999","content":"Third check: front door lock is stiff."}' \
+  -o /tmp/pipe.json
+python3 -c "import json;d=json.load(open('/tmp/pipe.json'));print('conv',d.get('conversation_id'),'| err',d.get('error'))"
