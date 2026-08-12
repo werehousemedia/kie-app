@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { parseIcs, enrich, BLOCKED_PATTERNS } from "../base44/shared/icalParse.ts";
 import { toWaNumber } from "../base44/shared/whatsappSend.ts";
 import { parseContractorLine, parseContractorList } from "../src/lib/contractorImport.js";
-import { composeJobMessage, waDispatchLink } from "../src/lib/taskUtils.js";
+import { composeJobMessage, waDispatchLink } from "../src/lib/jobMessage.js";
 
 // ---------------------------------------------------------------------------
 // iCal — real-shaped Airbnb / Booking.com feeds
