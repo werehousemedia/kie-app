@@ -53,6 +53,104 @@ function Card({ icon: Icon, title, chip, chipTone = "muted", children, action })
   );
 }
 
+// The WhatsApp channel is operator-level: one Meta Cloud API number serves
+// every landlord, and inbound messages are routed to the right workspace by
+// the tenant's phone number. Only the app owner (platform admin) configures it.
+function WhatsAppChannelCard() {
+  const { user } = useAuth();
+  const isOperator = user?.role === "admin";
+  const [settings, setSettings] = useState({});
+  const [values, setValues] = useState({ wa_phone_number_id: "", wa_access_token: "", wa_verify_token: "", wa_app_secret: "" });
+  const [busy, setBusy] = useState(false);
+
+  const load = () =>
+    base44.entities.AppSetting.list("-created_date", 100)
+      .then((rows) => {
+        const map = {};
+        for (const r of rows) if (r.key?.startsWith("wa_")) map[r.key] = r;
+        setSettings(map);
+      })
+      .catch(() => {});
+  useEffect(() => { if (isOperator) load(); }, [isOperator]);
+
+  const connected = !!(settings.wa_access_token?.value && settings.wa_phone_number_id?.value);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      for (const [key, value] of Object.entries(values)) {
+        if (!value.trim()) continue;
+        const existing = settings[key];
+        if (existing) await base44.entities.AppSetting.update(existing.id, { value: value.trim() });
+        else await base44.entities.AppSetting.create({ key, value: value.trim() });
+      }
+      toast.success("WhatsApp channel settings saved");
+      setValues({ wa_phone_number_id: "", wa_access_token: "", wa_verify_token: "", wa_app_secret: "" });
+      load();
+    } catch (e) {
+      toast.error(`Couldn't save: ${e?.message || "unknown error"}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!isOperator) {
+    return (
+      <Card icon={MessageSquare} title="WhatsApp channel" chip="Managed for you" chipTone="good">
+        <p>
+          Your tenants message the KIE number and their messages appear in your Inbox, triaged, with a job
+          raised automatically when something's urgent.
+        </p>
+        <p>Add each tenant's mobile exactly as they use it on WhatsApp — that's how the app knows who's writing.</p>
+        <Link to="/whatsapp" className="inline-flex items-center gap-1 text-[hsl(var(--sage))] font-medium hover:underline">
+          Open the Inbox <ExternalLink className="w-3 h-3" />
+        </Link>
+      </Card>
+    );
+  }
+
+  return (
+    <Card
+      icon={MessageSquare}
+      title="WhatsApp channel (operator)"
+      chip={connected ? "Connected" : "Not connected"}
+      chipTone={connected ? "good" : "warn"}
+    >
+      <p>
+        Meta Cloud API credentials for the shared inbound number. Inbound messages route to whichever
+        landlord has that tenant's phone on file; replies sent from the Inbox go out through this number.
+      </p>
+      <p className="text-muted-foreground">
+        Webhook URL: <code className="text-[10px]">https://kie-app.base44.app/functions/whatsapp_webhook</code>
+      </p>
+      <div className="grid gap-1.5 pt-1">
+        {[
+          { key: "wa_phone_number_id", label: "Phone number ID" },
+          { key: "wa_access_token", label: "Permanent access token" },
+          { key: "wa_verify_token", label: "Webhook verify token" },
+          { key: "wa_app_secret", label: "App secret (optional)" },
+        ].map((f) => (
+          <Input
+            key={f.key}
+            type={f.key === "wa_access_token" || f.key === "wa_app_secret" ? "password" : "text"}
+            value={values[f.key]}
+            onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+            placeholder={settings[f.key]?.value ? `${f.label} — saved, type to replace` : f.label}
+            className="h-8 text-xs"
+          />
+        ))}
+        <button
+          onClick={save}
+          disabled={busy}
+          className="self-start px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 disabled:opacity-60"
+        >
+          {busy ? "Saving…" : "Save credentials"}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
 // Workspace sharing: who can see this portfolio. Invited emails join THIS
 // workspace on their next sign-in; everyone else who registers gets their own
 // empty workspace and can never see this one (row-level security).
@@ -286,16 +384,7 @@ export default function Integrations() {
           )}
         </Card>
 
-        <Card icon={MessageSquare} title="WhatsApp channel" chip="Sandbox mode" chipTone="warn">
-          <p>
-            The inbound pipeline is live end-to-end: message → AI triage → auto-reply →
-            auto-ticket → comms log. Try it from the Inbox with a demo scenario.
-          </p>
-          <p>Live WhatsApp delivery switches on with the Business API connector.</p>
-          <Link to="/whatsapp" className="inline-flex items-center gap-1 text-[hsl(var(--sage))] font-medium hover:underline">
-            Open the Inbox <ExternalLink className="w-3 h-3" />
-          </Link>
-        </Card>
+        <WhatsAppChannelCard />
 
         <div className="rounded-xl border bg-card p-4">
           <p className="text-sm font-semibold mb-2">App preferences</p>
